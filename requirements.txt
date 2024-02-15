@@ -1,4 +1,5 @@
 torch
 torchvision
-flwr
+flwr[simulation]
 flwr-datasets
+datasets

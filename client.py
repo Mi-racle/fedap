@@ -105,7 +105,7 @@ def get_client_fn(dataset: FederatedDataset):
         valset = valset.with_transform(apply_transforms)
 
         # Create and return client
-        return FlowerClient(trainset, valset).to_client()
+        return FedClient(trainset, valset).to_client()
 
     return client_fn
 
