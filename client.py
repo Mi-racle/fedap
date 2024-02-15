@@ -36,7 +36,7 @@ NUM_CLIENTS = 100
 
 
 # Flower client, adapted from Pytorch quickstart example
-class FlowerClient(fl.client.NumPyClient):
+class FedClient(fl.client.NumPyClient):
     def __init__(self, trainset, valset):
         self.trainset = trainset
         self.valset = valset
