@@ -13,7 +13,6 @@ def train(net, trainloader, optim, epochs, device: str):
     """Train the network on the training set."""
     criterion = nn.CrossEntropyLoss()
     net.train()
-    print('11')
     for _ in range(epochs):
         for batch in trainloader:
             images, labels = batch["image"].to(device), batch["label"].to(device)

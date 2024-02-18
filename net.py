@@ -1,28 +1,27 @@
 import torch.nn as nn
+from torchvision.models import vgg16_bn
 
 
 class VGG16(nn.Module):
 
-    def __init__(self, cls_num):
-
+    def __init__(self, num_classes=10):
         super(VGG16, self).__init__()
 
-        self.linear = nn.Linear(32, 64)
-        self.relu = nn.ReLU()
-        self.fc = nn.Linear(64, cls_num)
+        self.vgg = vgg16_bn(num_classes=num_classes)
+        # self.linear = nn.Linear(32, 64)
+        # self.relu = nn.ReLU()
+        # self.fc = nn.Linear(64, num_classes)
 
     def forward(self, x):
+        # x = self.linear(x)
+        # x = self.relu(x)
 
-        x = self.linear(x)
-        x = self.relu(x)
-
-        return self.fc(x)
+        return self.vgg(x)
 
 
 class Net(nn.Module):
 
     def __init__(self, num_classes: int = 10) -> None:
-
         super(Net, self).__init__()
 
         self.conv1 = nn.Conv2d(1, 6, 5)
@@ -34,7 +33,6 @@ class Net(nn.Module):
         self.act = nn.ReLU()
 
     def forward(self, x):
-
         x = self.pool(self.act(self.conv1(x)))
         x = self.pool(self.act(self.conv2(x)))
         x = x.view(-1, 16 * 4 * 4)
