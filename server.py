@@ -37,8 +37,8 @@ def main():
     strategy = fl.server.strategy.FedAvg(
         # fraction_fit=0.1,  # Sample 10% of available clients for training
         # fraction_evaluate=0.05,  # Sample 5% of available clients for evaluation
-        min_fit_clients=100,  # Never sample less than min_fit_clients clients for training
-        min_evaluate_clients=100,  # Never sample less than min_evaluate_clients clients for evaluation
+        min_fit_clients=NUM_CLIENTS,  # Never sample less than min_fit_clients clients for training
+        min_evaluate_clients=NUM_CLIENTS,  # Never sample less than min_evaluate_clients clients for evaluation
         min_available_clients=int(
             NUM_CLIENTS * 1
         ),  # Wait until at least min_available_clients clients are available
