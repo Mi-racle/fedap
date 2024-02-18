@@ -14,6 +14,7 @@ from net import Net, VGG16
 from utils import train, test, apply_transforms
 
 NUM_CLIENTS = 100
+NETWORK = VGG16()
 
 
 # Flower client, adapted from Pytorch quickstart example
@@ -23,7 +24,7 @@ class FedClient(fl.client.NumPyClient):
         self.valset = valset
 
         # Instantiate model
-        self.model = VGG16(10)
+        self.model = NETWORK
 
         # Determine device
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -131,7 +132,7 @@ def get_evaluate_fn(
         # Determine device
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-        model = Net()
+        model = NETWORK
         set_params(model, parameters)
         model.to(device)
 
