@@ -10,10 +10,9 @@ from flwr.common.typing import Scalar
 from flwr_datasets import FederatedDataset
 from torch.utils.data import DataLoader
 
-from net import Net, VGG16
+from net import VGG16
 from utils import train, test, apply_transforms
 
-NUM_CLIENTS = 100
 NETWORK = VGG16()
 
 

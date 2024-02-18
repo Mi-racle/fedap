@@ -4,11 +4,12 @@ import flwr as fl
 from datasets import disable_progress_bar
 from flwr_datasets import FederatedDataset
 
-from client import NUM_CLIENTS, fit_config, weighted_average, get_evaluate_fn, get_client_fn
+from client import fit_config, weighted_average, get_evaluate_fn, get_client_fn
+
+NUM_CLIENTS = 100
 
 
 def main():
-
     # Parse input arguments
     parser = argparse.ArgumentParser(description="Flower Simulation with PyTorch")
 
@@ -34,13 +35,13 @@ def main():
 
     # Configure the strategy
     strategy = fl.server.strategy.FedAvg(
-        fraction_fit=0.1,  # Sample 10% of available clients for training
-        fraction_evaluate=0.05,  # Sample 5% of available clients for evaluation
-        min_fit_clients=10,  # Never sample less than 10 clients for training
-        min_evaluate_clients=5,  # Never sample less than 5 clients for evaluation
+        # fraction_fit=0.1,  # Sample 10% of available clients for training
+        # fraction_evaluate=0.05,  # Sample 5% of available clients for evaluation
+        min_fit_clients=100,  # Never sample less than min_fit_clients clients for training
+        min_evaluate_clients=100,  # Never sample less than min_evaluate_clients clients for evaluation
         min_available_clients=int(
-            NUM_CLIENTS * 0.75
-        ),  # Wait until at least 75 clients are available
+            NUM_CLIENTS * 1
+        ),  # Wait until at least min_available_clients clients are available
         on_fit_config_fn=fit_config,
         evaluate_metrics_aggregation_fn=weighted_average,  # Aggregate federated metrics
         evaluate_fn=get_evaluate_fn(centralized_testset),  # Global evaluation function
@@ -66,5 +67,4 @@ def main():
 
 
 if __name__ == "__main__":
-
     main()
