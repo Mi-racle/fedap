@@ -10,10 +10,10 @@ from flwr.common.typing import Scalar
 from flwr_datasets import FederatedDataset
 from torch.utils.data import DataLoader
 
-from net import VGG16
+from net import resnet18
 from utils import train, test, apply_transforms
 
-NETWORK = VGG16()
+NETWORK = resnet18(pretrained=False, in_channels=1, num_classes=10)
 
 
 # Flower client, adapted from Pytorch quickstart example
@@ -30,7 +30,7 @@ class FedClient(fl.client.NumPyClient):
         self.model.to(self.device)  # send model to device
 
     def get_parameters(self, config):
-        return [val.cpu().numpy() for _, val in self.model.state_dict().items()]
+        return [val.cpu().numpy() for name, val in self.model.state_dict().items() if 'bn' not in name]
 
     def fit(self, parameters, config):
         set_params(self.model, parameters)
@@ -102,9 +102,10 @@ def fit_config(server_round: int) -> Dict[str, Scalar]:
 
 def set_params(model: torch.nn.ModuleList, params: List[fl.common.NDArrays]):
     """Set model weights from a list of NumPy ndarrays."""
-    params_dict = zip(model.state_dict().keys(), params)
+    keys = [k for k in model.state_dict().keys() if 'bn' not in k]
+    params_dict = zip(keys, params)
     state_dict = OrderedDict({k: torch.Tensor(v) for k, v in params_dict})
-    model.load_state_dict(state_dict, strict=True)
+    model.load_state_dict(state_dict, strict=False)
 
 
 def weighted_average(metrics: List[Tuple[int, Metrics]]) -> Metrics:

@@ -6,7 +6,7 @@ from flwr_datasets import FederatedDataset
 
 from client import fit_config, weighted_average, get_evaluate_fn, get_client_fn
 
-NUM_CLIENTS = 100
+NUM_CLIENTS = 4
 
 
 def main():
