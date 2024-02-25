@@ -54,8 +54,7 @@ def main():
     client_resources = {
         'num_cpus': args.num_cpus,
         # "num_gpus": args.num_gpus,
-        'num_gpus': args.num_gpus if not torch.cuda.is_available() else
-        torch.cuda.get_device_properties(0).total_memory / NUM_CLIENTS
+        'num_gpus': args.num_gpus if not torch.cuda.is_available() else 1. / NUM_CLIENTS
     }
 
     # Start simulation
