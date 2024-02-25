@@ -28,7 +28,7 @@ class FedClient(fl.client.NumPyClient):
         self.model = NETWORK
 
         # Determine device
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.model.to(self.device)  # send model to device
 
     def get_parameters(self, config):
@@ -38,7 +38,7 @@ class FedClient(fl.client.NumPyClient):
         set_params(self.model, parameters, self.cid)
 
         # Read from config
-        batch, epochs = config["batch_size"], config["epochs"]
+        batch, epochs, patience = config['batch_size'], config['epochs'], config['patience']
 
         # Construct dataloader
         trainloader = DataLoader(self.trainset, batch_size=batch, shuffle=True)
@@ -46,7 +46,7 @@ class FedClient(fl.client.NumPyClient):
         # Define optimizer
         optimizer = torch.optim.SGD(self.model.parameters(), lr=0.01, momentum=0.9)
         # Train
-        train(self.model, trainloader, optimizer, epochs=epochs, device=self.device)
+        train(self.model, trainloader, optimizer, epochs=epochs, patience=patience, device=self.device)
 
         # Return local model and statistics
         return self.get_parameters({}), len(trainloader.dataset), {}
@@ -61,7 +61,7 @@ class FedClient(fl.client.NumPyClient):
         loss, accuracy = test(self.model, valloader, device=self.device)
 
         # Return statistics
-        return float(loss), len(valloader.dataset), {"accuracy": float(accuracy)}
+        return float(loss), len(valloader.dataset), {'accuracy': float(accuracy)}
 
 
 def get_client_fn(dataset: FederatedDataset):
@@ -75,13 +75,13 @@ def get_client_fn(dataset: FederatedDataset):
         """Construct a FlowerClient with its own dataset partition."""
 
         # Let's get the partition corresponding to the i-th client
-        client_dataset = dataset.load_partition(int(cid), "train")
+        client_dataset = dataset.load_partition(int(cid), 'train')
 
         # Now let's split it into train (90%) and validation (10%)
         client_dataset_splits = client_dataset.train_test_split(test_size=0.1)
 
-        trainset = client_dataset_splits["train"]
-        valset = client_dataset_splits["test"]
+        trainset = client_dataset_splits['train']
+        valset = client_dataset_splits['test']
 
         # Now we apply the transform to each batch.
         trainset = trainset.with_transform(apply_transforms)
@@ -96,8 +96,9 @@ def get_client_fn(dataset: FederatedDataset):
 def fit_config(server_round: int) -> Dict[str, Scalar]:
     """Return a configuration with static batch size and (local) epochs."""
     config = {
-        "epochs": 1,  # Number of local epochs done by clients
-        "batch_size": 32,  # Batch size to use by clients during fit()
+        'epochs': 50,  # Number of local epochs done by clients
+        'batch_size': 32,  # Batch size to use by clients during fit()
+        'patience': 5,  # early stopping
     }
     return config
 
@@ -119,11 +120,11 @@ def weighted_average(metrics: List[Tuple[int, Metrics]]) -> Metrics:
     """Aggregation function for (federated) evaluation metrics, i.e. those returned by
     the client's evaluate() method."""
     # Multiply accuracy of each client by number of examples used
-    accuracies = [num_examples * m["accuracy"] for num_examples, m in metrics]
+    accuracies = [num_examples * m['accuracy'] for num_examples, m in metrics]
     examples = [num_examples for num_examples, _ in metrics]
 
     # Aggregate and return custom metric (weighted average)
-    return {"accuracy": sum(accuracies) / sum(examples)}
+    return {'accuracy': sum(accuracies) / sum(examples)}
 
 
 def get_evaluate_fn(
@@ -137,7 +138,7 @@ def get_evaluate_fn(
         """Use the entire CIFAR-10 test set for evaluation."""
 
         # Determine device
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
         model = NETWORK
         set_params(model, parameters, 0)
@@ -152,6 +153,6 @@ def get_evaluate_fn(
         testloader = DataLoader(testset, batch_size=50)
         loss, accuracy = test(model, testloader, device=device)
 
-        return loss, {"accuracy": accuracy}
+        return loss, {'accuracy': accuracy}
 
     return evaluate

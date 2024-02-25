@@ -1,5 +1,6 @@
 import argparse
 
+import torch
 import flwr as fl
 from datasets import disable_progress_bar
 from flwr_datasets import FederatedDataset
@@ -51,8 +52,10 @@ def main():
 
     # Resources to be assigned to each virtual client
     client_resources = {
-        "num_cpus": args.num_cpus,
-        "num_gpus": args.num_gpus,
+        'num_cpus': args.num_cpus,
+        # "num_gpus": args.num_gpus,
+        'num_gpus': args.num_gpus if not torch.cuda.is_available() else
+        torch.cuda.get_device_properties(0).total_memory / NUM_CLIENTS
     }
 
     # Start simulation

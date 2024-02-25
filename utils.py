@@ -1,3 +1,5 @@
+from typing import Union
+
 import torch
 import torch.nn as nn
 from torchvision.transforms import ToTensor, Normalize, Compose
@@ -9,7 +11,7 @@ def apply_transforms(batch):
     return batch
 
 
-def train(net, trainloader, optim, epochs, device: str):
+def train(net, trainloader, optim, epochs, patience, device: str):
     """Train the network on the training set."""
     criterion = nn.CrossEntropyLoss()
     net.train()
