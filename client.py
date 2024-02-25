@@ -88,7 +88,7 @@ def get_client_fn(dataset: FederatedDataset):
         valset = valset.with_transform(apply_transforms)
 
         # Create and return client
-        return FedClient(trainset, valset, cid).to_client()
+        return FedClient(trainset, valset, int(cid)).to_client()
 
     return client_fn
 
