@@ -13,27 +13,27 @@ NUM_CLIENTS = 4
 
 def main():
     # Parse input arguments
-    parser = argparse.ArgumentParser(description="Flower Simulation with PyTorch")
+    parser = argparse.ArgumentParser(description='Flower Simulation with PyTorch')
 
     parser.add_argument(
-        "--num_cpus",
+        '--num_cpus',
         type=int,
         default=1,
-        help="Number of CPUs to assign to a virtual client",
+        help='Number of CPUs to assign to a virtual client',
     )
     parser.add_argument(
-        "--num_gpus",
+        '--num_gpus',
         type=float,
         default=0.0,
-        help="Ratio of GPU memory to assign to a virtual client",
+        help='Ratio of GPU memory to assign to a virtual client',
     )
-    parser.add_argument("--num_rounds", type=int, default=10, help="Number of FL rounds.")
+    parser.add_argument('--num_rounds', type=int, default=10, help='Number of FL rounds.')
 
     args = parser.parse_args()
 
     # Download MNIST dataset and partition it
-    mnist_fds = FederatedDataset(dataset="./mnist", partitioners={"train": NUM_CLIENTS})
-    centralized_testset = mnist_fds.load_full("test")
+    mnist_fds = FederatedDataset(dataset='./mnist', partitioners={'train': NUM_CLIENTS})
+    centralized_testset = mnist_fds.load_full('test')
 
     # Configure the strategy
     strategy = fl.server.strategy.FedAvg(
@@ -65,10 +65,10 @@ def main():
         config=fl.server.ServerConfig(num_rounds=args.num_rounds),
         strategy=strategy,
         actor_kwargs={
-            "on_actor_init_fn": disable_progress_bar  # disable tqdm on each actor/process spawning virtual clients
+            'on_actor_init_fn': disable_progress_bar  # disable tqdm on each actor/process spawning virtual clients
         },
     )
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
