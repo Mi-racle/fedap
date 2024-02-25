@@ -14,13 +14,15 @@ from net import resnet18
 from utils import train, test, apply_transforms
 
 NETWORK = resnet18(pretrained=False, in_channels=1, num_classes=10)
+NUM_LAYERS = 27
 
 
 # Flower client, adapted from Pytorch quickstart example
 class FedClient(fl.client.NumPyClient):
-    def __init__(self, trainset, valset):
+    def __init__(self, trainset, valset, cid):
         self.trainset = trainset
         self.valset = valset
+        self.cid = cid
 
         # Instantiate model
         self.model = NETWORK
@@ -33,7 +35,7 @@ class FedClient(fl.client.NumPyClient):
         return [val.cpu().numpy() for name, val in self.model.state_dict().items() if 'bn' not in name]
 
     def fit(self, parameters, config):
-        set_params(self.model, parameters)
+        set_params(self.model, parameters, self.cid)
 
         # Read from config
         batch, epochs = config["batch_size"], config["epochs"]
@@ -50,7 +52,7 @@ class FedClient(fl.client.NumPyClient):
         return self.get_parameters({}), len(trainloader.dataset), {}
 
     def evaluate(self, parameters, config):
-        set_params(self.model, parameters)
+        set_params(self.model, parameters, self.cid)
 
         # Construct dataloader
         valloader = DataLoader(self.valset, batch_size=64)
@@ -86,7 +88,7 @@ def get_client_fn(dataset: FederatedDataset):
         valset = valset.with_transform(apply_transforms)
 
         # Create and return client
-        return FedClient(trainset, valset).to_client()
+        return FedClient(trainset, valset, cid).to_client()
 
     return client_fn
 
@@ -100,10 +102,15 @@ def fit_config(server_round: int) -> Dict[str, Scalar]:
     return config
 
 
-def set_params(model: torch.nn.ModuleList, params: List[fl.common.NDArrays]):
+def set_params(model: torch.nn.ModuleList, params: List[fl.common.NDArrays], cid: int):
     """Set model weights from a list of NumPy ndarrays."""
     keys = [k for k in model.state_dict().keys() if 'bn' not in k]
-    params_dict = zip(keys, params)
+    if len(params) == NUM_LAYERS:
+        client_params = params
+    else:
+        cluster_label = params[-1][cid]
+        client_params = params[cluster_label * NUM_LAYERS: (cluster_label + 1) * NUM_LAYERS]
+    params_dict = zip(keys, client_params)
     state_dict = OrderedDict({k: torch.Tensor(v) for k, v in params_dict})
     model.load_state_dict(state_dict, strict=False)
 
@@ -133,7 +140,7 @@ def get_evaluate_fn(
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         model = NETWORK
-        set_params(model, parameters)
+        set_params(model, parameters, 0)
         model.to(device)
 
         # Apply transform to dataset

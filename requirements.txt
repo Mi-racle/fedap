@@ -3,3 +3,5 @@ torchvision
 flwr[simulation]
 flwr-datasets
 datasets
+numpy
+scikit-learn

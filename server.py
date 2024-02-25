@@ -5,6 +5,7 @@ from datasets import disable_progress_bar
 from flwr_datasets import FederatedDataset
 
 from client import fit_config, weighted_average, get_evaluate_fn, get_client_fn
+from strategy import FedAP
 
 NUM_CLIENTS = 4
 
@@ -34,7 +35,8 @@ def main():
     centralized_testset = mnist_fds.load_full("test")
 
     # Configure the strategy
-    strategy = fl.server.strategy.FedAvg(
+    # strategy = fl.server.strategy.FedAvg(
+    strategy = FedAP(
         # fraction_fit=0.1,  # Sample 10% of available clients for training
         # fraction_evaluate=0.05,  # Sample 5% of available clients for evaluation
         min_fit_clients=NUM_CLIENTS,  # Never sample less than min_fit_clients clients for training
