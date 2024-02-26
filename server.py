@@ -1,4 +1,5 @@
 import argparse
+import multiprocessing
 
 import torch
 import flwr as fl
@@ -66,8 +67,8 @@ def main():
 
     # Resources to be assigned to each virtual client
     client_resources = {
-        'num_cpus': num_cpus,
-        'num_gpus': num_gpus if not torch.cuda.is_available() else 1. / num_clients
+        'num_cpus': max(multiprocessing.cpu_count() // num_clients, 2),
+        'num_gpus': num_gpus if not torch.cuda.is_available() else max(1. / num_clients, .1)
     }
 
     # Start Logger
