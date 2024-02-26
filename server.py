@@ -39,7 +39,7 @@ def main():
     num_cpus = args.num_cpus
     num_gpus = args.num_gpus
     num_clients = args.num_clients
-    num_rounds = args.rounds
+    num_rounds = args.num_rounds
 
     # Download MNIST dataset and partition it
     mnist_fds = FederatedDataset(
