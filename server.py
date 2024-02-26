@@ -34,7 +34,7 @@ def main():
 
     # Download MNIST dataset and partition it
     mnist_fds = FederatedDataset(
-        dataset='./mnist',
+        dataset='./cifar10',
         # partitioners={'train': NUM_CLIENTS},
         partitioners={'train': DirichletPartitioner(NUM_CLIENTS)},
     )

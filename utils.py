@@ -7,7 +7,8 @@ from torchvision.transforms import ToTensor, Normalize, Compose
 
 def apply_transforms(batch):
     transforms = Compose([ToTensor(), Normalize((0.1307,), (0.3081,))])
-    batch["image"] = [transforms(img) for img in batch["image"]]
+    image_key = 'image' if 'image' in batch else 'img'
+    batch[image_key] = [transforms(img) for img in batch[image_key]]
     return batch
 
 
@@ -17,7 +18,8 @@ def train(net, trainloader, optim, epochs, patience, device: str):
     net.train()
     for _ in range(epochs):
         for batch in trainloader:
-            images, labels = batch["image"].to(device), batch["label"].to(device)
+            image_key = 'image' if 'image' in batch else 'img'
+            images, labels = batch[image_key].to(device), batch['label'].to(device)
             optim.zero_grad()
             loss = criterion(net(images), labels)
             loss.backward()
@@ -31,7 +33,8 @@ def test(net, testloader, device: str):
     net.eval()
     with torch.no_grad():
         for data in testloader:
-            images, labels = data["image"].to(device), data["label"].to(device)
+            image_key = 'image' if 'image' in data else 'img'
+            images, labels = data[image_key].to(device), data['label'].to(device)
             outputs = net(images)
             loss += criterion(outputs, labels).item()
             _, predicted = torch.max(outputs.data, 1)

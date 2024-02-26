@@ -15,7 +15,7 @@ from torch.utils.data import DataLoader
 from net import resnet18
 from utils import train, test, apply_transforms
 
-NETWORK = resnet18(pretrained=False, in_channels=1, num_classes=10)
+NETWORK = resnet18(pretrained=False, in_channels=3, num_classes=10)
 NUM_LAYERS = 27
 
 
