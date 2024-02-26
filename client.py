@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from logging import INFO
 from typing import Dict, Tuple, List
 
 import flwr as fl
@@ -6,6 +7,7 @@ import torch
 from datasets import Dataset
 from datasets.utils.logging import disable_progress_bar
 from flwr.common import Metrics
+from flwr.common.logger import log
 from flwr.common.typing import Scalar
 from flwr_datasets import FederatedDataset
 from torch.utils.data import DataLoader
@@ -123,8 +125,10 @@ def weighted_average(metrics: List[Tuple[int, Metrics]]) -> Metrics:
     accuracies = [num_examples * m['accuracy'] for num_examples, m in metrics]
     examples = [num_examples for num_examples, _ in metrics]
 
+    acc = sum(accuracies) / sum(examples)
+    log(INFO, f"Decentralized acc: {acc}")
     # Aggregate and return custom metric (weighted average)
-    return {'accuracy': sum(accuracies) / sum(examples)}
+    return {'accuracy': acc}
 
 
 def get_evaluate_fn(

@@ -1,13 +1,13 @@
 from functools import reduce
-from logging import WARNING, INFO
+from logging import WARNING
 from typing import Optional, Callable, Dict, Tuple, List, Union
 
 import numpy as np
-from sklearn.cluster import AffinityPropagation
 from flwr.common import NDArrays, Scalar, Parameters, MetricsAggregationFn, log, FitRes, parameters_to_ndarrays, \
     ndarrays_to_parameters
 from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import FedAvg
+from sklearn.cluster import AffinityPropagation
 
 WARNING_MIN_AVAILABLE_CLIENTS_TOO_LOW = """
 Setting `min_available_clients` lower than `min_fit_clients` or
@@ -81,7 +81,6 @@ class FedAP(FedAvg):
         if self.fit_metrics_aggregation_fn:
             fit_metrics = [(res.num_examples, res.metrics) for _, res in results]
             metrics_aggregated = self.fit_metrics_aggregation_fn(fit_metrics)
-            log(INFO, f"fit_round {server_round} decentralized acc: {metrics_aggregated}")
         elif server_round == 1:  # Only log this warning once
             log(WARNING, "No fit_metrics_aggregation_fn provided")
 

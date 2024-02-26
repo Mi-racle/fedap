@@ -9,7 +9,7 @@ from client import fit_config, weighted_average, get_evaluate_fn, get_client_fn
 from dirichlet import DirichletPartitioner
 from strategy import FedAP
 
-NUM_CLIENTS = 2
+NUM_CLIENTS = 10
 
 
 def main():
