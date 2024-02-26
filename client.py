@@ -43,7 +43,7 @@ class FedClient(fl.client.NumPyClient):
         batch, epochs, patience = config['batch_size'], config['epochs'], config['patience']
 
         # Construct dataloader
-        trainloader = DataLoader(self.trainset, batch_size=batch, shuffle=True)
+        trainloader = DataLoader(self.trainset, batch_size=batch, shuffle=True, drop_last=True)
 
         # Define optimizer
         optimizer = torch.optim.SGD(self.model.parameters(), lr=0.01, momentum=0.9)
@@ -57,7 +57,7 @@ class FedClient(fl.client.NumPyClient):
         set_params(self.model, parameters, self.cid)
 
         # Construct dataloader
-        valloader = DataLoader(self.valset, batch_size=64)
+        valloader = DataLoader(self.valset, batch_size=64, drop_last=True)
 
         # Evaluate
         loss, accuracy = test(self.model, valloader, device=self.device)
