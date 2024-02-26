@@ -1,5 +1,5 @@
 from functools import reduce
-from logging import WARNING
+from logging import WARNING, INFO
 from typing import Optional, Callable, Dict, Tuple, List, Union
 
 import numpy as np
@@ -81,6 +81,7 @@ class FedAP(FedAvg):
         if self.fit_metrics_aggregation_fn:
             fit_metrics = [(res.num_examples, res.metrics) for _, res in results]
             metrics_aggregated = self.fit_metrics_aggregation_fn(fit_metrics)
+            log(INFO, f"fit_round {server_round} decentralized acc: {metrics_aggregated}")
         elif server_round == 1:  # Only log this warning once
             log(WARNING, "No fit_metrics_aggregation_fn provided")
 

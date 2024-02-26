@@ -40,42 +40,38 @@ class DirichletPartitioner(Partitioner):
 
     def partition(self):
 
-        trainset = self.dataset
-        return []
-        # min_required_samples_per_client = 10
-        # min_samples = 0
-        # prng = np.random.default_rng(self.seed)
-        #
-        # # get the targets
-        # tmp_t = self.dataset.targets
-        # if isinstance(tmp_t, list):
-        #     tmp_t = np.array(tmp_t)
-        # if isinstance(tmp_t, torch.Tensor):
-        #     tmp_t = tmp_t.numpy()
-        # num_classes = len(set(tmp_t))
-        # total_samples = len(tmp_t)
-        # while min_samples < min_required_samples_per_client:
-        #     idx_clients: List[List] = [[] for _ in range(self.num_clients)]
-        #     for k in range(num_classes):
-        #         idx_k = np.where(tmp_t == k)[0]
-        #         prng.shuffle(idx_k)
-        #         proportions = prng.dirichlet(np.repeat(self.alpha, self.num_clients))
-        #         proportions = np.array(
-        #             [
-        #                 p * (len(idx_j) < total_samples / self.num_clients)
-        #                 for p, idx_j in zip(proportions, idx_clients)
-        #             ]
-        #         )
-        #         proportions = proportions / proportions.sum()
-        #         proportions = (np.cumsum(proportions) * len(idx_k)).astype(int)[:-1]
-        #         idx_k_split = np.split(idx_k, proportions)
-        #         idx_clients = [
-        #             idx_j + idx.tolist() for idx_j, idx in zip(idx_clients, idx_k_split)
-        #         ]
-        #         min_samples = min([len(idx_j) for idx_j in idx_clients])
-        #
+        min_required_samples_per_client = 10
+        min_samples = 0
+        prng = np.random.default_rng(self.seed)
+
+        # get the targets
+        labels = np.array(self.dataset['label'])
+        num_classes = self.dataset.features['label'].num_classes
+        total_samples = self.dataset.num_rows
+        idx_clients: List[List] = []
+        while min_samples < min_required_samples_per_client:
+            idx_clients = [[] for _ in range(self.num_clients)]
+            for k in range(num_classes):
+                idx_k = np.where(labels == k)[0]
+                prng.shuffle(idx_k)
+                proportions = prng.dirichlet(np.repeat(self.alpha, self.num_clients))
+                proportions = np.array(
+                    [
+                        p * (len(idx_j) < total_samples / self.num_clients)
+                        for p, idx_j in zip(proportions, idx_clients)
+                    ]
+                )
+                proportions = proportions / proportions.sum()
+                proportions = (np.cumsum(proportions) * len(idx_k)).astype(int)[:-1]
+                idx_k_split = np.split(idx_k, proportions)
+                idx_clients = [
+                    idx_j + idx.tolist() for idx_j, idx in zip(idx_clients, idx_k_split)
+                ]
+                min_samples = min([len(idx_j) for idx_j in idx_clients])
+
         # trainsets_per_client = [Subset(self.dataset, idxs) for idxs in idx_clients]
-        # return trainsets_per_client
+        trainsets_per_client = [self.dataset.select(idxs) for idxs in idx_clients]
+        return trainsets_per_client
 
     def load_partition(self, node_id: int) -> Dataset:
         """Load a single partition based on the partition index.
