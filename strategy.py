@@ -9,6 +9,8 @@ from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import FedAvg
 from sklearn.cluster import AffinityPropagation
 
+from cluster import MyAffinityPropagation
+
 WARNING_MIN_AVAILABLE_CLIENTS_TOO_LOW = """
 Setting `min_available_clients` lower than `min_fit_clients` or
 `min_evaluate_clients` can cause the server to fail when there are too few clients
@@ -114,7 +116,7 @@ def aggregate(results: List[Tuple[NDArrays, int]]) -> NDArrays:
         ]
     )
 
-    clustering = AffinityPropagation(damping=0.5).fit(flattened_weights)
+    clustering = MyAffinityPropagation(damping=0.5, affinity='cosine').fit(flattened_weights)
     cluster_labels = clustering.labels_
     max_label = max(cluster_labels)
 
