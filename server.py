@@ -9,8 +9,6 @@ from client import fit_config, weighted_average, get_evaluate_fn, get_client_fn
 from dirichlet import DirichletPartitioner
 from strategy import FedAP
 
-NUM_CLIENTS = 10
-
 
 def main():
     # Parse input arguments
@@ -28,15 +26,26 @@ def main():
         default=0.0,
         help='Ratio of GPU memory to assign to a virtual client',
     )
-    parser.add_argument('--num_rounds', type=int, default=10, help='Number of FL rounds.')
+    parser.add_argument(
+        '--num_clients',
+        type=int,
+        default=10,
+        help='Number of clients'
+    )
+    parser.add_argument('--num_rounds', type=int, default=50, help='Number of FL rounds.')
 
     args = parser.parse_args()
+
+    num_cpus = args.num_cpus
+    num_gpus = args.num_gpus
+    num_clients = args.num_clients
+    num_rounds = args.rounds
 
     # Download MNIST dataset and partition it
     mnist_fds = FederatedDataset(
         dataset='./cifar10',
         # partitioners={'train': NUM_CLIENTS},
-        partitioners={'train': DirichletPartitioner(NUM_CLIENTS)},
+        partitioners={'train': DirichletPartitioner(num_clients)},
     )
     centralized_testset = mnist_fds.load_full('test')
 
@@ -45,10 +54,10 @@ def main():
     strategy = FedAP(
         # fraction_fit=0.1,  # Sample 10% of available clients for training
         # fraction_evaluate=0.05,  # Sample 5% of available clients for evaluation
-        min_fit_clients=NUM_CLIENTS,  # Never sample less than min_fit_clients clients for training
-        min_evaluate_clients=NUM_CLIENTS,  # Never sample less than min_evaluate_clients clients for evaluation
+        min_fit_clients=num_clients,  # Never sample less than min_fit_clients clients for training
+        min_evaluate_clients=num_clients,  # Never sample less than min_evaluate_clients clients for evaluation
         min_available_clients=int(
-            NUM_CLIENTS * 1
+            num_clients * 1
         ),  # Wait until at least min_available_clients clients are available
         on_fit_config_fn=fit_config,
         evaluate_metrics_aggregation_fn=weighted_average,  # Aggregate federated metrics
@@ -57,9 +66,8 @@ def main():
 
     # Resources to be assigned to each virtual client
     client_resources = {
-        'num_cpus': args.num_cpus,
-        # "num_gpus": args.num_gpus,
-        'num_gpus': args.num_gpus if not torch.cuda.is_available() else 1. / NUM_CLIENTS
+        'num_cpus': num_cpus,
+        'num_gpus': num_gpus if not torch.cuda.is_available() else 1. / num_clients
     }
 
     # Start Logger
@@ -68,9 +76,9 @@ def main():
     # Start simulation
     fl.simulation.start_simulation(
         client_fn=get_client_fn(mnist_fds),
-        num_clients=NUM_CLIENTS,
+        num_clients=num_clients,
         client_resources=client_resources,
-        config=fl.server.ServerConfig(num_rounds=args.num_rounds),
+        config=fl.server.ServerConfig(num_rounds=num_rounds),
         strategy=strategy,
         actor_kwargs={
             'on_actor_init_fn': disable_progress_bar  # disable tqdm on each actor/process spawning virtual clients
