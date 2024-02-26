@@ -39,7 +39,6 @@ class FedAP(FedAvg):
             initial_parameters: Optional[Parameters] = None,
             fit_metrics_aggregation_fn: Optional[MetricsAggregationFn] = None,
             evaluate_metrics_aggregation_fn: Optional[MetricsAggregationFn] = None,
-            inplace: bool = True,
     ) -> None:
         super(FedAP, self).__init__(
             fraction_fit=fraction_fit,
@@ -54,7 +53,6 @@ class FedAP(FedAvg):
             initial_parameters=initial_parameters,
             fit_metrics_aggregation_fn=fit_metrics_aggregation_fn,
             evaluate_metrics_aggregation_fn=evaluate_metrics_aggregation_fn,
-            inplace=inplace,
         )
 
     def aggregate_fit(

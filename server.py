@@ -6,9 +6,10 @@ from datasets import disable_progress_bar
 from flwr_datasets import FederatedDataset
 
 from client import fit_config, weighted_average, get_evaluate_fn, get_client_fn
+from dirichlet import DirichletPartitioner
 from strategy import FedAP
 
-NUM_CLIENTS = 4
+NUM_CLIENTS = 2
 
 
 def main():
@@ -18,7 +19,7 @@ def main():
     parser.add_argument(
         '--num_cpus',
         type=int,
-        default=1,
+        default=2,
         help='Number of CPUs to assign to a virtual client',
     )
     parser.add_argument(
@@ -32,7 +33,11 @@ def main():
     args = parser.parse_args()
 
     # Download MNIST dataset and partition it
-    mnist_fds = FederatedDataset(dataset='./mnist', partitioners={'train': NUM_CLIENTS})
+    mnist_fds = FederatedDataset(
+        dataset='./mnist',
+        # partitioners={'train': NUM_CLIENTS},
+        partitioners={'train': DirichletPartitioner(NUM_CLIENTS)},
+    )
     centralized_testset = mnist_fds.load_full('test')
 
     # Configure the strategy
