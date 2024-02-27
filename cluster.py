@@ -158,7 +158,7 @@ class MyAffinityPropagation(ClusterMixin, BaseEstimator):
             Interval(Real, None, None, closed="neither"),
             None,
         ],
-        "affinity": [StrOptions({"euclidean", "precomputed"})],
+        "affinity": [StrOptions({"euclidean", "precomputed", "cosine", "laplacian"})],
         "verbose": ["verbose"],
         "random_state": ["random_state"],
     }

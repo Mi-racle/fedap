@@ -116,7 +116,7 @@ def aggregate(results: List[Tuple[NDArrays, int]]) -> NDArrays:
         ]
     )
 
-    clustering = MyAffinityPropagation(damping=0.5, affinity='cosine').fit(flattened_weights)
+    clustering = MyAffinityPropagation(damping=0.5, affinity='laplacian').fit(flattened_weights)
     cluster_labels = clustering.labels_
     max_label = max(cluster_labels)
 
