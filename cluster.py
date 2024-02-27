@@ -14,6 +14,19 @@ from sklearn.utils._param_validation import StrOptions, Interval
 from sklearn.utils.validation import check_is_fitted
 
 
+def wasserstein_distances(X):
+    matrix = np.zeros((X.shape[0], X.shape[0]))
+    for i, u in enumerate(X):
+        for j, v in enumerate(X):
+            if i < j:
+                matrix[i, j] = wasserstein_distance(u, v)
+            elif i == j:
+                matrix[i, j] = 0.
+            else:  # i > j
+                matrix[i, j] = matrix[j, i]
+    return matrix
+
+
 class MyAffinityPropagation(ClusterMixin, BaseEstimator):
     """Perform Affinity Propagation Clustering of data.
 
@@ -176,6 +189,8 @@ class MyAffinityPropagation(ClusterMixin, BaseEstimator):
             verbose=False,
             random_state=None,
     ):
+        self.cluster_centers_ = None
+        self.affinity_matrix_ = None
         self.damping = damping
         self.max_iter = max_iter
         self.convergence_iter = convergence_iter
@@ -222,7 +237,7 @@ class MyAffinityPropagation(ClusterMixin, BaseEstimator):
         elif self.affinity == "laplacian":
             self.affinity_matrix_ = -laplacian_kernel(X) + 1
         elif self.affinity == "wasserstein":
-            self.affinity_matrix_ = np.array([[-wasserstein_distance(u, v) for v in X] for u in X])
+            self.affinity_matrix_ = -wasserstein_distances(X)
 
         if self.affinity_matrix_.shape[0] != self.affinity_matrix_.shape[1]:
             raise ValueError(
