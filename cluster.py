@@ -2,6 +2,7 @@ import warnings
 from numbers import Real, Integral
 
 import numpy as np
+from scipy.stats import wasserstein_distance
 from sklearn import config_context
 from sklearn.base import ClusterMixin, BaseEstimator, _fit_context
 from sklearn.cluster._affinity_propagation import _affinity_propagation
@@ -158,22 +159,22 @@ class MyAffinityPropagation(ClusterMixin, BaseEstimator):
             Interval(Real, None, None, closed="neither"),
             None,
         ],
-        "affinity": [StrOptions({"euclidean", "precomputed", "cosine", "laplacian"})],
+        "affinity": [StrOptions({"euclidean", "precomputed", "cosine", "laplacian", "wasserstein"})],
         "verbose": ["verbose"],
         "random_state": ["random_state"],
     }
 
     def __init__(
-        self,
-        *,
-        damping=0.5,
-        max_iter=200,
-        convergence_iter=15,
-        copy=True,
-        preference=None,
-        affinity="euclidean",
-        verbose=False,
-        random_state=None,
+            self,
+            *,
+            damping=0.5,
+            max_iter=200,
+            convergence_iter=15,
+            copy=True,
+            preference=None,
+            affinity="euclidean",
+            verbose=False,
+            random_state=None,
     ):
         self.damping = damping
         self.max_iter = max_iter
@@ -220,6 +221,8 @@ class MyAffinityPropagation(ClusterMixin, BaseEstimator):
             self.affinity_matrix_ = -cosine_distances(X)
         elif self.affinity == "laplacian":
             self.affinity_matrix_ = -laplacian_kernel(X)
+        elif self.affinity == "wasserstein":
+            self.affinity_matrix_ = [[-wasserstein_distance(u, v) for v in X] for u in X]
 
         if self.affinity_matrix_.shape[0] != self.affinity_matrix_.shape[1]:
             raise ValueError(
