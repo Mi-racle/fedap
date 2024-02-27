@@ -220,9 +220,9 @@ class MyAffinityPropagation(ClusterMixin, BaseEstimator):
         elif self.affinity == "cosine":
             self.affinity_matrix_ = -cosine_distances(X)
         elif self.affinity == "laplacian":
-            self.affinity_matrix_ = -laplacian_kernel(X)
+            self.affinity_matrix_ = -laplacian_kernel(X) + 1
         elif self.affinity == "wasserstein":
-            self.affinity_matrix_ = [[-wasserstein_distance(u, v) for v in X] for u in X]
+            self.affinity_matrix_ = np.array([[-wasserstein_distance(u, v) for v in X] for u in X])
 
         if self.affinity_matrix_.shape[0] != self.affinity_matrix_.shape[1]:
             raise ValueError(
