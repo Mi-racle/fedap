@@ -53,8 +53,8 @@ def main():
     centralized_testset = mnist_fds.load_full('test')
 
     # Configure the strategy
-    strategy = fl.server.strategy.FedAvg(
-    # strategy = FedAP(
+    # strategy = fl.server.strategy.FedAvg(
+    strategy = FedAP(
         # fraction_fit=0.1,  # Sample 10% of available clients for training
         # fraction_evaluate=0.05,  # Sample 5% of available clients for evaluation
         min_fit_clients=num_clients,  # Never sample less than min_fit_clients clients for training
@@ -65,7 +65,7 @@ def main():
         on_fit_config_fn=fit_config,
         evaluate_metrics_aggregation_fn=weighted_average,  # Aggregate federated metrics
         evaluate_fn=get_evaluate_fn(centralized_testset),  # Global evaluation function
-        # affinity=affinity
+        affinity=affinity
     )
 
     # Resources to be assigned to each virtual client
