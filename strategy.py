@@ -1,12 +1,13 @@
 from functools import reduce
-from logging import WARNING
+from logging import WARNING, INFO
 from typing import Optional, Callable, Dict, Tuple, List, Union
 
 import numpy as np
 from flwr.common import NDArrays, Scalar, Parameters, MetricsAggregationFn, log, FitRes, parameters_to_ndarrays, \
-    ndarrays_to_parameters
+    ndarrays_to_parameters, EvaluateRes
 from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import FedAvg
+from flwr.server.strategy.aggregate import weighted_loss_avg
 from sklearn.cluster import AffinityPropagation
 
 from cluster import MyAffinityPropagation
@@ -41,6 +42,7 @@ class FedAP(FedAvg):
             initial_parameters: Optional[Parameters] = None,
             fit_metrics_aggregation_fn: Optional[MetricsAggregationFn] = None,
             evaluate_metrics_aggregation_fn: Optional[MetricsAggregationFn] = None,
+            affinity: str = 'euclidean',
     ) -> None:
         super(FedAP, self).__init__(
             fraction_fit=fraction_fit,
@@ -56,6 +58,8 @@ class FedAP(FedAvg):
             fit_metrics_aggregation_fn=fit_metrics_aggregation_fn,
             evaluate_metrics_aggregation_fn=evaluate_metrics_aggregation_fn,
         )
+        self.affinity = affinity
+        log(INFO, f"Affinity: {affinity}")
 
     def aggregate_fit(
             self,
@@ -74,7 +78,7 @@ class FedAP(FedAvg):
             (parameters_to_ndarrays(fit_res.parameters), fit_res.num_examples)
             for _, fit_res in results
         ]
-        aggregated_ndarrays = aggregate(weights_results)
+        aggregated_ndarrays = aggregate(weights_results, self.affinity)
 
         parameters_aggregated = ndarrays_to_parameters(aggregated_ndarrays)
 
@@ -88,8 +92,44 @@ class FedAP(FedAvg):
 
         return parameters_aggregated, metrics_aggregated
 
+    def aggregate_evaluate(
+            self,
+            server_round: int,
+            results: List[Tuple[ClientProxy, EvaluateRes]],
+            failures: List[Union[Tuple[ClientProxy, EvaluateRes], BaseException]],
+    ) -> Tuple[Optional[float], Dict[str, Scalar]]:
+        """Aggregate evaluation losses using weighted average."""
+        if not results:
+            return None, {}
+        # Do not aggregate if there are failures and failures are not accepted
+        if not self.accept_failures and failures:
+            return None, {}
 
-def aggregate(results: List[Tuple[NDArrays, int]]) -> NDArrays:
+        # Aggregate loss
+        loss_aggregated = weighted_loss_avg(
+            [
+                (evaluate_res.num_examples, evaluate_res.loss)
+                for _, evaluate_res in results
+            ]
+        )
+
+        # Aggregate custom metrics if aggregation fn was provided
+        metrics_aggregated = {}
+        if self.evaluate_metrics_aggregation_fn:
+            eval_metrics = [(res.num_examples, res.metrics) for _, res in results]
+            metrics_aggregated = self.evaluate_metrics_aggregation_fn(eval_metrics)
+        elif server_round == 1:  # Only log this warning once
+            log(WARNING, "No evaluate_metrics_aggregation_fn provided")
+
+        with open(f'loss_{self.affinity}.txt', 'a+') as fout:
+            fout.write(str(loss_aggregated) + '\n')
+        with open(f'accuracy_{self.affinity}.txt', 'a+') as fout:
+            fout.write(str(metrics_aggregated['accuracy']) + '\n')
+
+        return loss_aggregated, metrics_aggregated
+
+
+def aggregate(results: List[Tuple[NDArrays, int]], affinity: str) -> NDArrays:
     """Compute weighted average."""
     # Calculate the total number of examples used during training
     num_examples_total = sum(num_examples for (_, num_examples) in results)
@@ -116,7 +156,7 @@ def aggregate(results: List[Tuple[NDArrays, int]]) -> NDArrays:
         ]
     )
 
-    clustering = MyAffinityPropagation(damping=0.5, affinity='wasserstein').fit(flattened_weights)
+    clustering = MyAffinityPropagation(damping=0.5, affinity=affinity).fit(flattened_weights)
     cluster_labels = clustering.labels_
     max_label = max(cluster_labels)
 

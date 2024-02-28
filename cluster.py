@@ -8,7 +8,7 @@ from sklearn.base import ClusterMixin, BaseEstimator, _fit_context
 from sklearn.cluster._affinity_propagation import _affinity_propagation
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.metrics import euclidean_distances, pairwise_distances_argmin
-from sklearn.metrics.pairwise import cosine_distances, laplacian_kernel
+from sklearn.metrics.pairwise import cosine_distances, laplacian_kernel, rbf_kernel, sigmoid_kernel
 from sklearn.utils import check_random_state
 from sklearn.utils._param_validation import StrOptions, Interval
 from sklearn.utils.validation import check_is_fitted
@@ -172,7 +172,7 @@ class MyAffinityPropagation(ClusterMixin, BaseEstimator):
             Interval(Real, None, None, closed="neither"),
             None,
         ],
-        "affinity": [StrOptions({"euclidean", "precomputed", "cosine", "laplacian", "wasserstein"})],
+        "affinity": [StrOptions({"euclidean", "precomputed", "cosine", "laplacian", "gaussian", "sigmoid", "wasserstein"})],
         "verbose": ["verbose"],
         "random_state": ["random_state"],
     }
@@ -236,6 +236,10 @@ class MyAffinityPropagation(ClusterMixin, BaseEstimator):
             self.affinity_matrix_ = -cosine_distances(X)
         elif self.affinity == "laplacian":
             self.affinity_matrix_ = -laplacian_kernel(X) + 1
+        elif self.affinity == "gaussian":
+            self.affinity_matrix_ = -rbf_kernel(X) + 1
+        elif self.affinity == "sigmoid":
+            self.affinity_matrix_ = -sigmoid_kernel(X) + 1
         elif self.affinity == "wasserstein":
             self.affinity_matrix_ = -wasserstein_distances(X)
 
