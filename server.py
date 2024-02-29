@@ -4,6 +4,7 @@ import multiprocessing
 import torch
 import flwr as fl
 from datasets import disable_progress_bar
+from flwr.server.strategy import FedProx
 from flwr_datasets import FederatedDataset
 
 from client import fit_config, weighted_average, get_evaluate_fn, get_client_fn
@@ -53,20 +54,48 @@ def main():
     centralized_testset = mnist_fds.load_full('test')
 
     # Configure the strategy
-    # strategy = fl.server.strategy.FedAvg(
-    strategy = FedAP(
-        # fraction_fit=0.1,  # Sample 10% of available clients for training
-        # fraction_evaluate=0.05,  # Sample 5% of available clients for evaluation
-        min_fit_clients=num_clients,  # Never sample less than min_fit_clients clients for training
-        min_evaluate_clients=num_clients,  # Never sample less than min_evaluate_clients clients for evaluation
-        min_available_clients=int(
-            num_clients * 1
-        ),  # Wait until at least min_available_clients clients are available
-        on_fit_config_fn=fit_config,
-        evaluate_metrics_aggregation_fn=weighted_average,  # Aggregate federated metrics
-        evaluate_fn=get_evaluate_fn(centralized_testset),  # Global evaluation function
-        affinity=affinity
-    )
+
+    if affinity == 'avg' or 'fedavg':
+        strategy = fl.server.strategy.FedAvg(
+            # fraction_fit=0.1,  # Sample 10% of available clients for training
+            # fraction_evaluate=0.05,  # Sample 5% of available clients for evaluation
+            min_fit_clients=num_clients,  # Never sample less than min_fit_clients clients for training
+            min_evaluate_clients=num_clients,  # Never sample less than min_evaluate_clients clients for evaluation
+            min_available_clients=int(
+                num_clients * 1
+            ),  # Wait until at least min_available_clients clients are available
+            on_fit_config_fn=fit_config,
+            evaluate_metrics_aggregation_fn=weighted_average,  # Aggregate federated metrics
+            evaluate_fn=get_evaluate_fn(centralized_testset),  # Global evaluation function
+        )
+    elif affinity == 'prox' or 'fedprox':
+        strategy = FedProx(
+            # fraction_fit=0.1,  # Sample 10% of available clients for training
+            # fraction_evaluate=0.05,  # Sample 5% of available clients for evaluation
+            min_fit_clients=num_clients,  # Never sample less than min_fit_clients clients for training
+            min_evaluate_clients=num_clients,  # Never sample less than min_evaluate_clients clients for evaluation
+            min_available_clients=int(
+                num_clients * 1
+            ),  # Wait until at least min_available_clients clients are available
+            on_fit_config_fn=fit_config,
+            evaluate_metrics_aggregation_fn=weighted_average,  # Aggregate federated metrics
+            evaluate_fn=get_evaluate_fn(centralized_testset),  # Global evaluation function
+            proximal_mu=0.5
+        )
+    else:
+        strategy = FedAP(
+            # fraction_fit=0.1,  # Sample 10% of available clients for training
+            # fraction_evaluate=0.05,  # Sample 5% of available clients for evaluation
+            min_fit_clients=num_clients,  # Never sample less than min_fit_clients clients for training
+            min_evaluate_clients=num_clients,  # Never sample less than min_evaluate_clients clients for evaluation
+            min_available_clients=int(
+                num_clients * 1
+            ),  # Wait until at least min_available_clients clients are available
+            on_fit_config_fn=fit_config,
+            evaluate_metrics_aggregation_fn=weighted_average,  # Aggregate federated metrics
+            evaluate_fn=get_evaluate_fn(centralized_testset),  # Global evaluation function
+            affinity=affinity
+        )
 
     # Resources to be assigned to each virtual client
     client_resources = {
@@ -75,7 +104,7 @@ def main():
     }
 
     # Start Logger
-    fl.common.logger.configure(identifier="Experiment", filename="log.txt")
+    fl.common.logger.configure(identifier="Experiment", filename="log_prox.txt")
 
     # Start simulation
     fl.simulation.start_simulation(
