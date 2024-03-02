@@ -1,9 +1,11 @@
 import argparse
 import multiprocessing
+from logging import INFO
 
 import torch
 import flwr as fl
 from datasets import disable_progress_bar
+from flwr.common import log
 from flwr.server.strategy import FedProx
 from flwr_datasets import FederatedDataset
 
@@ -55,7 +57,7 @@ def main():
 
     # Configure the strategy
 
-    if affinity == 'avg' or 'fedavg':
+    if affinity == 'avg' or affinity == 'fedavg':
         strategy = fl.server.strategy.FedAvg(
             # fraction_fit=0.1,  # Sample 10% of available clients for training
             # fraction_evaluate=0.05,  # Sample 5% of available clients for evaluation
@@ -68,7 +70,8 @@ def main():
             evaluate_metrics_aggregation_fn=weighted_average,  # Aggregate federated metrics
             evaluate_fn=get_evaluate_fn(centralized_testset),  # Global evaluation function
         )
-    elif affinity == 'prox' or 'fedprox':
+        log(INFO, 'FedAvg')
+    elif affinity == 'prox' or affinity == 'fedprox':
         strategy = FedProx(
             # fraction_fit=0.1,  # Sample 10% of available clients for training
             # fraction_evaluate=0.05,  # Sample 5% of available clients for evaluation
@@ -82,6 +85,7 @@ def main():
             evaluate_fn=get_evaluate_fn(centralized_testset),  # Global evaluation function
             proximal_mu=0.5
         )
+        log(INFO, 'FedProx')
     else:
         strategy = FedAP(
             # fraction_fit=0.1,  # Sample 10% of available clients for training
@@ -96,6 +100,7 @@ def main():
             evaluate_fn=get_evaluate_fn(centralized_testset),  # Global evaluation function
             affinity=affinity
         )
+        log(INFO, f'FedAP with {affinity}')
 
     # Resources to be assigned to each virtual client
     client_resources = {
@@ -104,7 +109,7 @@ def main():
     }
 
     # Start Logger
-    fl.common.logger.configure(identifier="Experiment", filename="log_prox.txt")
+    fl.common.logger.configure(identifier="Experiment", filename=f"log_{affinity}.txt")
 
     # Start simulation
     fl.simulation.start_simulation(
