@@ -15,7 +15,7 @@ from torch.utils.data import DataLoader
 from net import resnet18
 from utils import train, test, apply_transforms
 
-NETWORK = resnet18(pretrained=False, in_channels=3, num_classes=10)
+NETWORK = resnet18(pretrained=False, in_channels=3, num_classes=53)
 NUM_LAYERS = 27
 
 
@@ -50,13 +50,17 @@ class FedClient(fl.client.NumPyClient):
         # Train
         train(self.model, trainloader, optimizer, epochs=epochs, patience=patience, device=self.device)
 
+        # cifar batch 64
+        valloader = DataLoader(self.valset, batch_size=64, drop_last=True)
+        loss, accuracy = test(self.model, valloader, device=self.device)
+
         # Return local model and statistics
-        return self.get_parameters({}), len(trainloader.dataset), {}
+        return self.get_parameters({}), len(trainloader.dataset), {'loss': float(loss), 'accuracy': float(accuracy)}
 
     def evaluate(self, parameters, config):
         set_params(self.model, parameters, self.cid)
 
-        # Construct dataloader
+        # cifar batch 64
         valloader = DataLoader(self.valset, batch_size=64, drop_last=True)
 
         # Evaluate
@@ -79,8 +83,7 @@ def get_client_fn(dataset: FederatedDataset):
         # Let's get the partition corresponding to the i-th client
         client_dataset = dataset.load_partition(int(cid), 'train')
 
-        # Now let's split it into train (90%) and validation (10%)
-        client_dataset_splits = client_dataset.train_test_split(test_size=0.1)
+        client_dataset_splits = client_dataset.train_test_split(test_size=0.2)
 
         trainset = client_dataset_splits['train']
         valset = client_dataset_splits['test']
