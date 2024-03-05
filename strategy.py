@@ -136,6 +136,23 @@ class FedAP(FedAvg):
     def _aggregate(self, results: List[Tuple[NDArrays, int]], affinity: str) -> NDArrays:
         """Compute weighted average."""
 
+        accuracy_total = sum(accuracy for (_, accuracy) in results)
+
+        weighted_weights = [
+            [layer * num_examples for layer in weights] for weights, num_examples in results
+        ]
+
+        average_weights: NDArrays = [
+            reduce(np.add, layer_updates) / accuracy_total
+            for layer_updates in zip(*weighted_weights)
+        ]
+
+        weights_as_vector = np.concatenate(
+            [
+                layer.flatten() for layer in average_weights
+            ]
+        )
+
         flattened_weights = np.stack(
             [
                 np.concatenate(
@@ -146,7 +163,9 @@ class FedAP(FedAvg):
             ]
         )
 
-        clustering = MyAffinityPropagation(damping=0.5, affinity=affinity).fit(flattened_weights)
+        diff_weights = flattened_weights - weights_as_vector
+
+        clustering = MyAffinityPropagation(damping=0.5, affinity=affinity).fit(diff_weights)
         cluster_labels = clustering.labels_
         max_label = max(cluster_labels)
 
@@ -461,26 +480,26 @@ class MyFedAvg(FedAvg):
 
 class MyFedProx(FedProx):
     def __init__(
-        self,
-        *,
-        fraction_fit: float = 1.0,
-        fraction_evaluate: float = 1.0,
-        min_fit_clients: int = 2,
-        min_evaluate_clients: int = 2,
-        min_available_clients: int = 2,
-        evaluate_fn: Optional[
-            Callable[
-                [int, NDArrays, Dict[str, Scalar]],
-                Optional[Tuple[float, Dict[str, Scalar]]],
-            ]
-        ] = None,
-        on_fit_config_fn: Optional[Callable[[int], Dict[str, Scalar]]] = None,
-        on_evaluate_config_fn: Optional[Callable[[int], Dict[str, Scalar]]] = None,
-        accept_failures: bool = True,
-        initial_parameters: Optional[Parameters] = None,
-        fit_metrics_aggregation_fn: Optional[MetricsAggregationFn] = None,
-        evaluate_metrics_aggregation_fn: Optional[MetricsAggregationFn] = None,
-        proximal_mu: float,
+            self,
+            *,
+            fraction_fit: float = 1.0,
+            fraction_evaluate: float = 1.0,
+            min_fit_clients: int = 2,
+            min_evaluate_clients: int = 2,
+            min_available_clients: int = 2,
+            evaluate_fn: Optional[
+                Callable[
+                    [int, NDArrays, Dict[str, Scalar]],
+                    Optional[Tuple[float, Dict[str, Scalar]]],
+                ]
+            ] = None,
+            on_fit_config_fn: Optional[Callable[[int], Dict[str, Scalar]]] = None,
+            on_evaluate_config_fn: Optional[Callable[[int], Dict[str, Scalar]]] = None,
+            accept_failures: bool = True,
+            initial_parameters: Optional[Parameters] = None,
+            fit_metrics_aggregation_fn: Optional[MetricsAggregationFn] = None,
+            evaluate_metrics_aggregation_fn: Optional[MetricsAggregationFn] = None,
+            proximal_mu: float,
     ) -> None:
         super(MyFedProx, self).__init__(
             fraction_fit=fraction_fit,

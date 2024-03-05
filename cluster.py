@@ -235,7 +235,8 @@ class MyAffinityPropagation(ClusterMixin, BaseEstimator):
         elif self.affinity == "cosine":
             self.affinity_matrix_ = -cosine_distances(X)
         elif self.affinity == "laplacian":
-            self.affinity_matrix_ = -laplacian_kernel(X) + 1
+            # self.affinity_matrix_ = -laplacian_kernel(X) + 1
+            self.affinity_matrix_ = -1 / laplacian_kernel(X)
         elif self.affinity == "gaussian":
             self.affinity_matrix_ = -rbf_kernel(X) + 1
         elif self.affinity == "sigmoid":
