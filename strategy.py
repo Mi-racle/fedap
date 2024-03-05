@@ -75,7 +75,8 @@ class FedAP(FedAvg):
             return None, {}
 
         weights_results = [
-            (parameters_to_ndarrays(fit_res.parameters), fit_res.num_examples)
+            # (parameters_to_ndarrays(fit_res.parameters), fit_res.num_examples)
+            (parameters_to_ndarrays(fit_res.parameters), fit_res.metrics['density'])
             for _, fit_res in results
         ]
         aggregated_ndarrays = self._aggregate(weights_results, self.affinity)
@@ -136,23 +137,6 @@ class FedAP(FedAvg):
     def _aggregate(self, results: List[Tuple[NDArrays, int]], affinity: str) -> NDArrays:
         """Compute weighted average."""
 
-        accuracy_total = sum(accuracy for (_, accuracy) in results)
-
-        weighted_weights = [
-            [layer * num_examples for layer in weights] for weights, num_examples in results
-        ]
-
-        average_weights: NDArrays = [
-            reduce(np.add, layer_updates) / accuracy_total
-            for layer_updates in zip(*weighted_weights)
-        ]
-
-        weights_as_vector = np.concatenate(
-            [
-                layer.flatten() for layer in average_weights
-            ]
-        )
-
         flattened_weights = np.stack(
             [
                 np.concatenate(
@@ -163,9 +147,13 @@ class FedAP(FedAvg):
             ]
         )
 
-        diff_weights = flattened_weights - weights_as_vector
+        densities = np.stack(
+            [
+                density for weights, density in results
+            ]
+        )
 
-        clustering = MyAffinityPropagation(damping=0.5, affinity=affinity).fit(diff_weights)
+        clustering = MyAffinityPropagation(damping=0.5, affinity=affinity).fit(densities)
         cluster_labels = clustering.labels_
         max_label = max(cluster_labels)
 

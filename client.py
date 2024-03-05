@@ -4,6 +4,7 @@ from typing import Dict, Tuple, List
 
 import flwr as fl
 import numpy as np
+import pandas as pd
 import torch
 from datasets import Dataset
 from datasets.utils.logging import disable_progress_bar
@@ -11,6 +12,7 @@ from flwr.common import Metrics
 from flwr.common.logger import log
 from flwr.common.typing import Scalar
 from flwr_datasets import FederatedDataset
+from sklearn.neighbors import KernelDensity
 from torch.utils.data import DataLoader
 
 from net import resnet18
@@ -55,8 +57,18 @@ class FedClient(fl.client.NumPyClient):
         valloader = DataLoader(self.valset, batch_size=64, drop_last=True)
         loss, accuracy, cm = test(self.model, valloader, device=self.device)
 
+        dataset = trainloader.dataset
+        df = pd.DataFrame(dataset['train'])
+        value_counts = df['label'].value_counts()
+        label_counts = np.array([count for count in value_counts])
+        data = label_counts[:, np.newaxis]
+        kde = KernelDensity(bandwidth=0.5, kernel='gaussian')
+        kde.fit(data)
+        x_vals = np.linspace(min(data), max(data), 1000)[:]
+        log_density = kde.score_samples(x_vals)
+
         # Return local model and statistics
-        return self.get_parameters({}), len(trainloader.dataset), {'loss': float(loss), 'accuracy': float(accuracy)}
+        return self.get_parameters({}), len(trainloader.dataset), {'loss': float(loss), 'accuracy': float(accuracy), 'density': log_density}
         # central
         # return self.get_parameters({}), len(trainloader.dataset), {'loss': float(loss), 'accuracy': float(accuracy), 'confusion_matrix': cm}
 
