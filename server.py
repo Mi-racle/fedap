@@ -13,7 +13,7 @@ from flwr_datasets import FederatedDataset
 
 from client import fit_config, weighted_average, get_evaluate_fn, get_client_fn
 from dirichlet import DirichletPartitioner
-from strategy import FedAP, FedAcc
+from strategy import FedAP, FedAcc, MyFedAvg
 from utils import increment_path
 
 
@@ -41,14 +41,14 @@ def main():
     mnist_fds = FederatedDataset(
         dataset=f'./{dataset}',
         # partitioners={'train': num_clients},
-        partitioners={'train': DirichletPartitioner(num_clients)},
+        partitioners={'train': DirichletPartitioner(num_clients, alpha=0.1)},
     )
     centralized_testset = mnist_fds.load_full('test')
 
     # Configure the strategy
 
     if affinity == 'avg' or affinity == 'fedavg':
-        strategy = fl.server.strategy.FedAvg(
+        strategy = MyFedAvg(
             # fraction_fit=0.1,  # Sample 10% of available clients for training
             # fraction_evaluate=0.05,  # Sample 5% of available clients for evaluation
             min_fit_clients=num_clients,  # Never sample less than min_fit_clients clients for training

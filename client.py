@@ -3,6 +3,7 @@ from logging import INFO
 from typing import Dict, Tuple, List
 
 import flwr as fl
+import numpy as np
 import torch
 from datasets import Dataset
 from datasets.utils.logging import disable_progress_bar
@@ -52,10 +53,12 @@ class FedClient(fl.client.NumPyClient):
 
         # cifar batch 64
         valloader = DataLoader(self.valset, batch_size=64, drop_last=True)
-        loss, accuracy = test(self.model, valloader, device=self.device)
+        loss, accuracy, cm = test(self.model, valloader, device=self.device)
 
         # Return local model and statistics
         return self.get_parameters({}), len(trainloader.dataset), {'loss': float(loss), 'accuracy': float(accuracy)}
+        # central
+        # return self.get_parameters({}), len(trainloader.dataset), {'loss': float(loss), 'accuracy': float(accuracy), 'confusion_matrix': cm}
 
     def evaluate(self, parameters, config):
         set_params(self.model, parameters, self.cid)
@@ -64,10 +67,10 @@ class FedClient(fl.client.NumPyClient):
         valloader = DataLoader(self.valset, batch_size=64, drop_last=True)
 
         # Evaluate
-        loss, accuracy = test(self.model, valloader, device=self.device)
+        loss, accuracy, cm = test(self.model, valloader, device=self.device)
 
         # Return statistics
-        return float(loss), len(valloader.dataset), {'accuracy': float(accuracy)}
+        return float(loss), len(valloader.dataset), {'loss': float(loss), 'accuracy': float(accuracy), 'confusion_matrix': cm}
 
 
 def get_client_fn(dataset: FederatedDataset):
@@ -103,7 +106,7 @@ def fit_config(server_round: int) -> Dict[str, Scalar]:
     config = {
         'epochs': 10,  # Number of local epochs done by clients
         'batch_size': 32,  # Batch size to use by clients during fit()
-        'patience': 5,  # early stopping
+        'patience': 5,  # early stopping (not working currently)
     }
     return config
 
@@ -158,7 +161,7 @@ def get_evaluate_fn(
         disable_progress_bar()
 
         testloader = DataLoader(testset, batch_size=50)
-        loss, accuracy = test(model, testloader, device=device)
+        loss, accuracy, cm = test(model, testloader, device=device)
 
         return loss, {'accuracy': accuracy}
 

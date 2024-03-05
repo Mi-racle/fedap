@@ -5,6 +5,7 @@ from typing import Union
 
 import torch
 import torch.nn as nn
+from sklearn.metrics import confusion_matrix
 from torchvision.transforms import ToTensor, Normalize, Compose
 
 
@@ -34,6 +35,7 @@ def test(net, testloader, device: Union[str, torch.device]):
     criterion = nn.CrossEntropyLoss()
     correct, loss = 0, 0.0
     net.eval()
+    cm = confusion_matrix([], [], labels=list(range(53)))
     with torch.no_grad():
         for data in testloader:
             image_key = 'image' if 'image' in data else 'img'
@@ -42,8 +44,9 @@ def test(net, testloader, device: Union[str, torch.device]):
             loss += criterion(outputs, labels).item()
             _, predicted = torch.max(outputs.data, 1)
             correct += (predicted == labels).sum().item()
+            cm += confusion_matrix(labels.cpu().detach().numpy(), predicted.cpu().detach().numpy(), labels=list(range(53)))
     accuracy = correct / len(testloader.dataset)
-    return loss, accuracy
+    return loss, accuracy, cm
 
 
 def increment_path(dst_path, exist_ok=False, sep='', mkdir=False):

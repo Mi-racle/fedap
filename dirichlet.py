@@ -46,7 +46,8 @@ class DirichletPartitioner(Partitioner):
 
         # get the targets
         labels = np.array(self.dataset['label'])
-        num_classes = self.dataset.features['label'].num_classes
+        # num_classes = self.dataset.features['label'].num_classes
+        num_classes = 53
         total_samples = self.dataset.num_rows
         idx_clients: List[List] = []
         while min_samples < min_required_samples_per_client:
