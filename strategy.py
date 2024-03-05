@@ -137,15 +137,15 @@ class FedAP(FedAvg):
     def _aggregate(self, results: List[Tuple[NDArrays, int]], affinity: str) -> NDArrays:
         """Compute weighted average."""
 
-        flattened_weights = np.stack(
-            [
-                np.concatenate(
-                    [
-                        layer.flatten() for layer in weights
-                    ]
-                ) for weights, num_examples in results
-            ]
-        )
+        # flattened_weights = np.stack(
+        #     [
+        #         np.concatenate(
+        #             [
+        #                 layer.flatten() for layer in weights
+        #             ]
+        #         ) for weights, num_examples in results
+        #     ]
+        # )
 
         densities = np.stack(
             [
