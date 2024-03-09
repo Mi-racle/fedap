@@ -57,23 +57,16 @@ class FedClient(fl.client.NumPyClient):
         valloader = DataLoader(self.valset, batch_size=64, drop_last=True)
         loss, accuracy, cm = test(self.model, valloader, device=self.device)
 
-        dataset = trainloader.dataset
-        df = pd.DataFrame(dataset['train'])
-        value_counts = df['label'].value_counts()
-        label_counts = np.array([count for count in value_counts])
-        data = label_counts[:, np.newaxis]
-        kde = KernelDensity(bandwidth=0.5, kernel='gaussian')
-        kde.fit(data)
-        x_vals = np.linspace(min(data), max(data), 1000)[:]
-        log_density = kde.score_samples(x_vals)
-
         # Return local model and statistics
-        return self.get_parameters({}), len(trainloader.dataset), {'loss': float(loss), 'accuracy': float(accuracy), 'density': log_density}
+        return self.get_parameters({}), len(trainloader.dataset), {'loss': float(loss), 'accuracy': float(accuracy)}
         # central
         # return self.get_parameters({}), len(trainloader.dataset), {'loss': float(loss), 'accuracy': float(accuracy), 'confusion_matrix': cm}
 
     def evaluate(self, parameters, config):
         set_params(self.model, parameters, self.cid)
+
+        if self.cid == 0:
+            torch.save(self.model.state_dict(), 'best.pt')
 
         # cifar batch 64
         valloader = DataLoader(self.valset, batch_size=64, drop_last=True)

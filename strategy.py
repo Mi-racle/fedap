@@ -75,8 +75,7 @@ class FedAP(FedAvg):
             return None, {}
 
         weights_results = [
-            # (parameters_to_ndarrays(fit_res.parameters), fit_res.num_examples)
-            (parameters_to_ndarrays(fit_res.parameters), fit_res.metrics['density'])
+            (parameters_to_ndarrays(fit_res.parameters), fit_res.num_examples)
             for _, fit_res in results
         ]
         aggregated_ndarrays = self._aggregate(weights_results, self.affinity)
@@ -137,26 +136,20 @@ class FedAP(FedAvg):
     def _aggregate(self, results: List[Tuple[NDArrays, int]], affinity: str) -> NDArrays:
         """Compute weighted average."""
 
-        # flattened_weights = np.stack(
-        #     [
-        #         np.concatenate(
-        #             [
-        #                 layer.flatten() for layer in weights
-        #             ]
-        #         ) for weights, num_examples in results
-        #     ]
-        # )
-
-        densities = np.stack(
+        flattened_weights = np.stack(
             [
-                density for weights, density in results
+                np.concatenate(
+                    [
+                        layer.flatten() for layer in weights
+                    ]
+                ) for weights, num_examples in results
             ]
         )
 
-        clustering = MyAffinityPropagation(damping=0.5, affinity=affinity).fit(densities)
+        clustering = MyAffinityPropagation(damping=0.5, affinity=affinity).fit(flattened_weights)
         cluster_labels = clustering.labels_
         max_label = max(cluster_labels)
-
+        log(INFO, f'number of cluster: {max_label + 1}')
         weights_prime: NDArrays = []
         for cluster in range(0, max_label + 1):
             temp_weights = []
@@ -165,6 +158,7 @@ class FedAP(FedAvg):
                 if label == cluster:
                     cluster_size += 1
                     temp_weights.append(results[i][0])
+
             aggregated_weights: NDArrays = [
                 reduce(np.add, layer_updates) / cluster_size
                 for layer_updates in zip(*temp_weights)
@@ -502,8 +496,8 @@ class MyFedProx(FedProx):
             initial_parameters=initial_parameters,
             fit_metrics_aggregation_fn=fit_metrics_aggregation_fn,
             evaluate_metrics_aggregation_fn=evaluate_metrics_aggregation_fn,
+            proximal_mu=proximal_mu
         )
-        self.proximal_mu = proximal_mu
 
     def __repr__(self) -> str:
         """Compute a string representation of the strategy."""

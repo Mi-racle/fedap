@@ -41,7 +41,7 @@ def main():
     mnist_fds = FederatedDataset(
         dataset=f'./{dataset}',
         # partitioners={'train': num_clients},
-        partitioners={'train': DirichletPartitioner(num_clients, alpha=0.1)},
+        partitioners={'train': DirichletPartitioner(num_clients, alpha=0.01)},
     )
     centralized_testset = mnist_fds.load_full('test')
 
@@ -73,7 +73,7 @@ def main():
             on_fit_config_fn=fit_config,
             evaluate_metrics_aggregation_fn=weighted_average,  # Aggregate federated metrics
             evaluate_fn=get_evaluate_fn(centralized_testset),  # Global evaluation function
-            proximal_mu=0.5
+            proximal_mu=0.3
         )
         log(INFO, 'FedProx')
     elif affinity == 'acc' or affinity == 'fedacc':
