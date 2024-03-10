@@ -138,9 +138,11 @@ class LabelPartitioner(Partitioner):
         contains = []
 
         for i in range(self.num_clients):
-            current = [i % num_classes]
-            times[i % num_classes] += 1
-            j = 1
+            # current = [i % num_classes]
+            # times[i % num_classes] += 1
+            # j = 1
+            current = []
+            j = 0
             while j < self.labels_per_client:
                 pool = [index for index, item in enumerate(times) if item == 0]
                 pool = num_classes if len(pool) == 0 else pool
