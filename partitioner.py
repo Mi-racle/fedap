@@ -142,7 +142,9 @@ class LabelPartitioner(Partitioner):
             times[i % num_classes] += 1
             j = 1
             while j < self.labels_per_client:
-                index = prng.choice(num_classes, 1)[0]
+                pool = [index for index, item in enumerate(times) if item == 0]
+                pool = num_classes if len(pool) == 0 else pool
+                index = prng.choice(pool, 1)[0]
                 if index not in current:
                     current.append(index)
                     times[index] += 1
