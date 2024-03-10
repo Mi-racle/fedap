@@ -13,6 +13,8 @@ from flwr_datasets import FederatedDataset
 
 from client import fit_config, weighted_average, get_evaluate_fn, get_client_fn
 from dirichlet import DirichletPartitioner
+
+from partitioner import LabelPartitioner
 from strategy import FedAP, FedAcc, MyFedAvg, MyFedProx
 from utils import increment_path
 
@@ -27,6 +29,7 @@ def main():
     parser.add_argument('--num_rounds', type=int, default=30, help='Number of FL rounds')
     parser.add_argument('--affinity', type=str, default='fedavg', help='Distance function in affinity propagation')
     parser.add_argument('--dataset', type=str, default='cifar10', help='Dataset')
+    parser.add_argument('--partitioner', type=str, default='iid', help='Distribution')
 
     args = parser.parse_args()
 
@@ -36,12 +39,18 @@ def main():
     num_rounds = args.num_rounds
     affinity = args.affinity
     dataset = args.dataset
+    partitioner = args.partitioner
 
     # Download MNIST dataset and partition it
     mnist_fds = FederatedDataset(
         dataset=f'./{dataset}',
-        # partitioners={'train': num_clients},
-        partitioners={'train': DirichletPartitioner(num_clients, alpha=0.1)},
+        partitioners={
+            'train':
+                num_clients if partitioner == 'iid' else (
+                    DirichletPartitioner(num_clients, alpha=0.1) if partitioner == 'dirichlet' else
+                    LabelPartitioner(num_clients, labels_per_client=3)
+                )
+        },
     )
     centralized_testset = mnist_fds.load_full('test')
 
