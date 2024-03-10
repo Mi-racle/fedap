@@ -151,6 +151,10 @@ class FedAP(FedAvg):
 
         clustering = MyAffinityPropagation(damping=0.5, affinity=affinity).fit(flattened_weights)
         cluster_labels = clustering.labels_
+        with open(f'runs/cluster_{self.affinity}.txt', 'a+') as fout:
+            for cluster_label in cluster_labels:
+                fout.write(str(cluster_label) + ',')
+            fout.write('\n')
         max_label = max(cluster_labels)
         log(INFO, f'number of cluster: {max_label + 1}')
         weights_prime: NDArrays = []

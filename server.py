@@ -126,6 +126,8 @@ def main():
         fout.write('---------------------------------------------\n')
     with open(f'runs/accuracy_{affinity}.txt', 'a+') as fout:
         fout.write('---------------------------------------------\n')
+    with open(f'runs/cluster_{affinity}.txt', 'a+') as fout:
+        fout.write('---------------------------------------------\n')
 
     # Start Logger
     fl.common.logger.configure(identifier='Experiment', filename=increment_path(f'runs/log_{affinity}.txt'))
