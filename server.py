@@ -12,9 +12,8 @@ from flwr.server.strategy import FedProx
 from flwr_datasets import FederatedDataset
 
 from client import fit_config, weighted_average, get_evaluate_fn, get_client_fn
-from dirichlet import DirichletPartitioner
 
-from partitioner import LabelPartitioner
+from partitioner import DirichletPartitioner, LabelPartitioner
 from strategy import FedAP, FedAcc, MyFedAvg, MyFedProx
 from utils import increment_path
 
