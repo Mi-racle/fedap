@@ -41,7 +41,7 @@ def main():
     mnist_fds = FederatedDataset(
         dataset=f'./{dataset}',
         # partitioners={'train': num_clients},
-        partitioners={'train': DirichletPartitioner(num_clients, alpha=0.01)},
+        partitioners={'train': DirichletPartitioner(num_clients, alpha=0.2)},
     )
     centralized_testset = mnist_fds.load_full('test')
 

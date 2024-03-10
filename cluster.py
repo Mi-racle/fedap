@@ -233,7 +233,7 @@ class MyAffinityPropagation(ClusterMixin, BaseEstimator):
         elif self.affinity == "euclidean":  # self.affinity == "euclidean"
             self.affinity_matrix_ = -euclidean_distances(X, squared=True)
         elif self.affinity == "cosine":
-            self.affinity_matrix_ = -cosine_distances(X)
+            self.affinity_matrix_ = -1 / cosine_distances(X)
         elif self.affinity == "laplacian":
             self.affinity_matrix_ = -laplacian_kernel(X) + 1
             # self.affinity_matrix_ = -1 / laplacian_kernel(X)
