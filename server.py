@@ -47,7 +47,7 @@ def main():
             'train':
                 num_clients if partitioner == 'iid' else (
                     DirichletPartitioner(num_clients, alpha=0.1) if partitioner == 'dirichlet' else
-                    LabelPartitioner(num_clients, labels_per_client=3)
+                    LabelPartitioner(num_clients, labels_per_client=10)
                 )
         },
     )

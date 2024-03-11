@@ -1,15 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-# SETTINGS = [
-#     ('/home/miracle/fedyolo/global_map_noniid_avg30.txt', 'FedAvg', '^', '-'),
-#     ('/home/miracle/fedyolo/global_map_noniid_avg30_es.txt', 'FedAvg with early stopping', '^', ':'),
-#     ('/home/miracle/fedyolo/global_map_noniid_prox30.txt', 'FedProx', 'o', '-'),
-#     ('/home/miracle/fedyolo/global_map_noniid_prox30_es.txt', 'FedProx with early stopping', 'o', ':'),
-#     ('/home/miracle/fedyolo/global_map_noniid_mavg30.txt', 'FedAvg-mAP', 'x', '-'),
-#     ('/home/miracle/fedyolo/global_map_noniid_mavg30_es.txt', 'FedAvg-mAP with early stopping', 'x', ':'),
-# ]
-
 SETTINGS = {
     'iid': {
         'accuracy': [
@@ -57,8 +48,8 @@ YLIMS = {
         'loss': [0, 1],
     },
     'label': {
-        'accuracy': [0, .7],
-        'loss': [2, 6]
+        'accuracy': [.6, .8],
+        'loss': [0, 2]
     }
 }
 
