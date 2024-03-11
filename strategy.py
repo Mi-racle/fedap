@@ -150,6 +150,7 @@ class FedAP(FedAvg):
         )
 
         clustering = MyAffinityPropagation(damping=0.5, affinity=affinity).fit(flattened_weights)
+        # clustering = MyAffinityPropagation(damping=0.5, affinity=affinity, preference=-87).fit(flattened_weights)
         cluster_labels = clustering.labels_
         with open(f'runs/cluster_{self.affinity}.txt', 'a+') as fout:
             for cluster_label in cluster_labels:
