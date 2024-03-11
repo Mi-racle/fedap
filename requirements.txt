@@ -5,3 +5,7 @@ flwr-datasets
 datasets
 numpy
 scikit-learn
+pandas
+scipy
+matplotlib
+seaborn

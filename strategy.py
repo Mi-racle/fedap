@@ -113,7 +113,7 @@ class FedAP(FedAvg):
                 for _, evaluate_res in results
             ]
         )
-        confusion_matrix = [list(range(53)) for _ in range(53)]
+        confusion_matrix = [[0 for __ in range(53)] for _ in range(53)]
         for _, evaluate_res in results:
             confusion_matrix += evaluate_res.metrics['confusion_matrix']
         confusion_matrix = np.array(confusion_matrix)
@@ -272,7 +272,7 @@ class FedAcc(FedAvg):
                 for _, evaluate_res in results
             ]
         )
-        confusion_matrix = [list(range(53)) for _ in range(53)]
+        confusion_matrix = [[0 for __ in range(53)] for _ in range(53)]
         for _, evaluate_res in results:
             confusion_matrix += evaluate_res.metrics['confusion_matrix']
         confusion_matrix = np.array(confusion_matrix)
@@ -398,7 +398,7 @@ class MyFedAvg(FedAvg):
         #         for num_examples, metrics in fit_metrics
         #     ]
         # )
-        # confusion_matrix = [list(range(53)) for _ in range(53)]
+        # confusion_matrix = [[0 for __ in range(53)] for _ in range(53)]
         # for _, metrics in fit_metrics:
         #     confusion_matrix += metrics['confusion_matrix']
         # confusion_matrix = np.array(confusion_matrix)
@@ -431,7 +431,7 @@ class MyFedAvg(FedAvg):
                 for _, evaluate_res in results
             ]
         )
-        confusion_matrix = [list(range(53)) for _ in range(53)]
+        confusion_matrix = [[0 for __ in range(53)] for _ in range(53)]
         for _, evaluate_res in results:
             confusion_matrix += evaluate_res.metrics['confusion_matrix']
         confusion_matrix = np.array(confusion_matrix)
@@ -591,7 +591,7 @@ class MyFedProx(FedProx):
                 for _, evaluate_res in results
             ]
         )
-        confusion_matrix = [list(range(53)) for _ in range(53)]
+        confusion_matrix = [[0 for __ in range(53)] for _ in range(53)]
         for _, evaluate_res in results:
             confusion_matrix += evaluate_res.metrics['confusion_matrix']
         confusion_matrix = np.array(confusion_matrix)
