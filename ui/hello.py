@@ -15,9 +15,11 @@ class MainWindow(QMainWindow):
 
         self.layout = QVBoxLayout()
 
+        table_head = ["节点名", "目标服务器IP", "数据集", "操作", "状态"]
         self.table = QTableWidget()
-        self.table.setColumnCount(5)
-        self.table.setHorizontalHeaderLabels(["节点名", "目标服务器IP", "数据集", "操作", "训练进度"])
+        self.table.setColumnCount(len(table_head))
+        self.table.setColumnWidth(3, 240)
+        self.table.setHorizontalHeaderLabels(table_head)
 
         self.add_row_button = QPushButton("添加节点")
         self.add_row_button.clicked.connect(self.add_row)
@@ -27,45 +29,47 @@ class MainWindow(QMainWindow):
 
         self.central_widget.setLayout(self.layout)
 
+        self.node_holder = 1
+
     def add_row(self):
         row_position = self.table.rowCount()
         self.table.insertRow(row_position)
 
-        # 添加字符串项
-        string_item = QTableWidgetItem('节点名')
+        string_item = QTableWidgetItem(f'节点名{self.node_holder}')
         self.table.setItem(row_position, 0, string_item)
 
-        # 添加IP地址项
         ip_item = QTableWidgetItem('127.0.0.1')
         self.table.setItem(row_position, 1, ip_item)
 
-        # 添加IP地址项
         folder_item = QTableWidgetItem('尚未选择')
         folder_item.setSizeHint(folder_item.sizeHint())
         self.table.setItem(row_position, 2, folder_item)
 
-        # 创建一个QWidget，包含两个按钮
         button_widget = QWidget()
         layout = QHBoxLayout()
 
-        # 添加选择文件夹按钮
         select_folder_button = QPushButton("选择文件夹")
         select_folder_button.clicked.connect(lambda _, row=row_position: self.select_folder(row))
         layout.addWidget(select_folder_button)
 
-        # 添加开始/结束按钮
-        start_stop_button = QPushButton("开始")
-        start_stop_button.clicked.connect(lambda _, btn=start_stop_button: self.toggle_button(btn))
+        start_stop_button = QPushButton("加入联邦")
+        start_stop_button.clicked.connect(lambda _, btn=start_stop_button: self.federate_button(btn))
         layout.addWidget(start_stop_button)
+
+        delete_stop_button = QPushButton("删除节点")
+        delete_stop_button.clicked.connect(lambda _, row=row_position: self.delete_button(row))
+        layout.addWidget(delete_stop_button)
 
         button_widget.setLayout(layout)
 
-        # 将QWidget设置为表格的单元格
         self.table.setCellWidget(row_position, 3, button_widget)
 
-        # 添加进度条
-        progress_bar = QProgressBar()
-        self.table.setCellWidget(row_position, 4, progress_bar)
+        status_item = QTableWidgetItem('闲置')
+        self.table.setItem(row_position, 4, status_item)
+
+        self.table.setRowHeight(row_position, 60)
+
+        self.node_holder += 1
 
     def select_folder(self, row):
         folder_dialog = QFileDialog()
@@ -75,12 +79,24 @@ class MainWindow(QMainWindow):
             folder_item = QTableWidgetItem(folder_path)
             self.table.setItem(row, 2, folder_item)
 
-    def toggle_button(self, button):
-        if button.text() == "开始":
-            button.setText("结束")
+    def federate_button(self, button):
+        if button.text() == "加入联邦":
+            button.setText("退出联邦")
         else:
-            button.setText("开始")
+            button.setText("加入联邦")
 
+    def delete_button(self, row):
+        self.table.removeRow(row)
+
+        for row in range(self.table.rowCount()):
+            widget = self.table.cellWidget(row, 3)
+            buttons = widget.findChildren(QPushButton)
+
+            buttons[0].clicked.disconnect()
+            buttons[0].clicked.connect(lambda _, row=row: self.select_folder(row))
+
+            buttons[2].clicked.disconnect()
+            buttons[2].clicked.connect(lambda _, row=row: self.delete_button(row))
 
 def main():
     app = QApplication(sys.argv)
