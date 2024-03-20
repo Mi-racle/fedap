@@ -1,13 +1,16 @@
 import sys
+
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QTableWidget, QPushButton, QWidget, \
-    QTableWidgetItem, QFileDialog, QProgressBar, QHBoxLayout
+    QTableWidgetItem, QFileDialog, QHBoxLayout, QTabWidget, QGridLayout, QLabel, QTextEdit, QFrame
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("锁销分类联邦学习网络")
+        self.setWindowTitle('锁销分类联邦学习网络')
         self.setGeometry(100, 100, 800, 600)
 
         self.central_widget = QWidget()
@@ -15,21 +18,64 @@ class MainWindow(QMainWindow):
 
         self.layout = QVBoxLayout()
 
-        table_head = ["节点名", "目标服务器IP", "数据集", "操作", "状态"]
+        self.tab_widget = QTabWidget()
+        self.layout.addWidget(self.tab_widget)
+
+        self.tab1 = QWidget()
+        self.tab_widget.addTab(self.tab1, '联邦学习')
+        self.tab1.layout = QVBoxLayout()
+
+        table_head = ['节点名', '目标服务器IP', '数据集', '操作', '状态']
         self.table = QTableWidget()
         self.table.setColumnCount(len(table_head))
-        self.table.setColumnWidth(3, 240)
+        self.table.setColumnWidth(3, 300)
         self.table.setHorizontalHeaderLabels(table_head)
 
         self.add_row_button = QPushButton("添加节点")
         self.add_row_button.clicked.connect(self.add_row)
 
-        self.layout.addWidget(self.table)
-        self.layout.addWidget(self.add_row_button)
+        self.node_holder = 1
+
+        self.tab1.layout.addWidget(self.table)
+        self.tab1.layout.addWidget(self.add_row_button)
+        self.tab1.setLayout(self.tab1.layout)
+
+        self.tab2 = QWidget()
+        self.tab_widget.addTab(self.tab2, '锁销分类')
+        self.tab2.layout = QGridLayout()
+
+        self.image_label = QLabel('选择图片后将在此显示')
+        self.image_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)  # 设置文本左上角对齐
+        self.image_label.setStyleSheet('background-color: white')
+        self.image_label.setFixedSize(300, 300)
+        self.tab2.layout.addWidget(self.image_label, 0, 0)
+
+        self.result_text = QTextEdit('分类结果将在此显示')
+        self.result_text.setReadOnly(True)
+        self.result_text.setStyleSheet('border: none;')
+        self.result_text.setFixedSize(300, 300)
+        self.tab2.layout.addWidget(self.result_text, 0, 1)
+
+        self.button_widget = QWidget()
+        self.button_widget.setFixedHeight(40)
+        self.button_widget.layout = QHBoxLayout()
+
+        select_image_button = QPushButton('选择图片')
+        select_image_button.clicked.connect(self.select_image)
+        self.button_widget.layout.addWidget(select_image_button)
+
+        classify_button = QPushButton('开始分类')
+        classify_button.clicked.connect(self.classify_image)
+        self.button_widget.layout.addWidget(classify_button)
+
+        self.button_widget.setLayout(self.button_widget.layout)
+
+        self.tab2.layout.addWidget(self.button_widget, 1, 0)
+
+        self.tab2.setLayout(self.tab2.layout)
 
         self.central_widget.setLayout(self.layout)
 
-        self.node_holder = 1
 
     def add_row(self):
         row_position = self.table.rowCount()
@@ -43,6 +89,7 @@ class MainWindow(QMainWindow):
 
         folder_item = QTableWidgetItem('尚未选择')
         folder_item.setSizeHint(folder_item.sizeHint())
+        folder_item.setFlags(folder_item.flags() ^ Qt.ItemFlag.ItemIsEditable)
         self.table.setItem(row_position, 2, folder_item)
 
         button_widget = QWidget()
@@ -53,11 +100,15 @@ class MainWindow(QMainWindow):
         layout.addWidget(select_folder_button)
 
         start_stop_button = QPushButton("加入联邦")
-        start_stop_button.clicked.connect(lambda _, btn=start_stop_button: self.federate_button(btn))
+        start_stop_button.clicked.connect(lambda _, row=row_position, btn=start_stop_button: self.federate_button(row, btn))
         layout.addWidget(start_stop_button)
 
         delete_stop_button = QPushButton("删除节点")
         delete_stop_button.clicked.connect(lambda _, row=row_position: self.delete_button(row))
+        layout.addWidget(delete_stop_button)
+
+        delete_stop_button = QPushButton("导出模型")
+        delete_stop_button.clicked.connect(lambda _, row=row_position: self.export_button(row))
         layout.addWidget(delete_stop_button)
 
         button_widget.setLayout(layout)
@@ -79,10 +130,15 @@ class MainWindow(QMainWindow):
             folder_item = QTableWidgetItem(folder_path)
             self.table.setItem(row, 2, folder_item)
 
-    def federate_button(self, button):
+    def federate_button(self, row, button):
         if button.text() == "加入联邦":
+            status_item = QTableWidgetItem('训练中')
+            status_item.setForeground(Qt.GlobalColor.green)
+            self.table.setItem(row, 4, status_item)
             button.setText("退出联邦")
         else:
+            status_item = QTableWidgetItem('闲置')
+            self.table.setItem(row, 4, status_item)
             button.setText("加入联邦")
 
     def delete_button(self, row):
@@ -97,6 +153,24 @@ class MainWindow(QMainWindow):
 
             buttons[2].clicked.disconnect()
             buttons[2].clicked.connect(lambda _, row=row: self.delete_button(row))
+
+    def export_button(self, row):
+        pass
+
+    def select_image(self):
+        file_dialog = QFileDialog(self)
+        file_dialog.setWindowTitle('选择图片')
+        file_dialog.setFileMode(QFileDialog.FileMode.ExistingFile)
+        file_dialog.setNameFilter('Images (*.png *.jpg *.jpeg *.bmp)')
+        if file_dialog.exec():
+            file_path = file_dialog.selectedFiles()[0]
+            pixmap = QPixmap(file_path)
+            self.image_label.setPixmap(pixmap.scaled(300, 300, aspectRatioMode=Qt.AspectRatioMode.IgnoreAspectRatio))
+            # self.image_label.setPixmap(pixmap.scaled(300, 300, aspectRatioMode=Qt.AspectRatioMode.KeepAspectRatio))
+
+    def classify_image(self):
+        pass
+
 
 def main():
     app = QApplication(sys.argv)
