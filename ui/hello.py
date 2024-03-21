@@ -56,21 +56,27 @@ class MainWindow(QMainWindow):
         self.result_text.setFixedSize(300, 300)
         self.tab2.layout.addWidget(self.result_text, 0, 1)
 
-        self.button_widget = QWidget()
-        self.button_widget.setFixedHeight(40)
-        self.button_widget.layout = QHBoxLayout()
-
+        self.left_widget = QWidget()
+        self.left_widget.setFixedHeight(40)
+        self.left_widget.layout = QHBoxLayout()
         select_image_button = QPushButton('选择图片')
         select_image_button.clicked.connect(self.select_image)
-        self.button_widget.layout.addWidget(select_image_button)
+        self.left_widget.layout.addWidget(select_image_button)
+        self.left_widget.setLayout(self.left_widget.layout)
+        self.tab2.layout.addWidget(self.left_widget, 1, 0)
 
+        self.right_widget = QWidget()
+        self.right_widget.setFixedHeight(40)
+        self.right_widget.layout = QHBoxLayout()
+        select_model_button = QPushButton('选择模型')
+        select_model_button.clicked.connect(self.select_model)
+        self.right_widget.layout.addWidget(select_model_button)
         classify_button = QPushButton('开始分类')
         classify_button.clicked.connect(self.classify_image)
-        self.button_widget.layout.addWidget(classify_button)
-
-        self.button_widget.setLayout(self.button_widget.layout)
-
-        self.tab2.layout.addWidget(self.button_widget, 1, 0)
+        self.right_widget.layout.addWidget(classify_button)
+        self.model_path = ''
+        self.right_widget.setLayout(self.right_widget.layout)
+        self.tab2.layout.addWidget(self.right_widget, 1, 1)
 
         self.tab2.setLayout(self.tab2.layout)
 
@@ -116,6 +122,7 @@ class MainWindow(QMainWindow):
         self.table.setCellWidget(row_position, 3, button_widget)
 
         status_item = QTableWidgetItem('闲置')
+        status_item.setFlags(status_item.flags() ^ Qt.ItemFlag.ItemIsEditable)
         self.table.setItem(row_position, 4, status_item)
 
         self.table.setRowHeight(row_position, 60)
@@ -149,10 +156,10 @@ class MainWindow(QMainWindow):
             buttons = widget.findChildren(QPushButton)
 
             buttons[0].clicked.disconnect()
-            buttons[0].clicked.connect(lambda _, row=row: self.select_folder(row))
+            buttons[0].clicked.connect(lambda _, _row=row: self.select_folder(_row))
 
             buttons[2].clicked.disconnect()
-            buttons[2].clicked.connect(lambda _, row=row: self.delete_button(row))
+            buttons[2].clicked.connect(lambda _, _row=row: self.delete_button(_row))
 
     def export_button(self, row):
         pass
@@ -167,6 +174,14 @@ class MainWindow(QMainWindow):
             pixmap = QPixmap(file_path)
             self.image_label.setPixmap(pixmap.scaled(300, 300, aspectRatioMode=Qt.AspectRatioMode.IgnoreAspectRatio))
             # self.image_label.setPixmap(pixmap.scaled(300, 300, aspectRatioMode=Qt.AspectRatioMode.KeepAspectRatio))
+
+    def select_model(self):
+        file_dialog = QFileDialog(self)
+        file_dialog.setWindowTitle('选择模型')
+        file_dialog.setFileMode(QFileDialog.FileMode.ExistingFile)
+        file_dialog.setNameFilter('(*.pt)')
+        if file_dialog.exec():
+            self.model_path = file_dialog.selectedFiles()[0]
 
     def classify_image(self):
         pass
