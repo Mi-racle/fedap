@@ -43,7 +43,8 @@ class FedClient(fl.client.NumPyClient):
         set_params(self.model, parameters, self.cid)
 
         # Read from config
-        batch, epochs, patience = config['batch_size'], config['epochs'], config['patience']
+        batch, epochs, patience, server_round = \
+            config['batch_size'], config['epochs'], config['patience'], config['server_round']
 
         # Construct dataloader
         trainloader = DataLoader(self.trainset, batch_size=batch, shuffle=True, drop_last=True)
@@ -112,6 +113,7 @@ def fit_config(server_round: int) -> Dict[str, Scalar]:
         'epochs': 10,  # Number of local epochs done by clients
         'batch_size': 32,  # Batch size to use by clients during fit()
         'patience': 5,  # early stopping (not working currently)
+        'server_round': server_round
     }
     return config
 

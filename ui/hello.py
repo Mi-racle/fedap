@@ -1,9 +1,13 @@
 import sys
+import threading
+import time
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QTableWidget, QPushButton, QWidget, \
     QTableWidgetItem, QFileDialog, QHBoxLayout, QTabWidget, QGridLayout, QLabel, QTextEdit, QFrame
+
+from testui import Ale
 
 
 class MainWindow(QMainWindow):
@@ -82,7 +86,6 @@ class MainWindow(QMainWindow):
 
         self.central_widget.setLayout(self.layout)
 
-
     def add_row(self):
         row_position = self.table.rowCount()
         self.table.insertRow(row_position)
@@ -106,7 +109,8 @@ class MainWindow(QMainWindow):
         layout.addWidget(select_folder_button)
 
         start_stop_button = QPushButton("加入联邦")
-        start_stop_button.clicked.connect(lambda _, row=row_position, btn=start_stop_button: self.federate_button(row, btn))
+        start_stop_button.clicked.connect(
+            lambda _, row=row_position, btn=start_stop_button: self.federate_button(row, btn))
         layout.addWidget(start_stop_button)
 
         delete_stop_button = QPushButton("删除节点")
