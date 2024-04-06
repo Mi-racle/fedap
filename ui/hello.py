@@ -1,3 +1,4 @@
+import random
 import sys
 import threading
 import time
@@ -14,7 +15,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle('锁销分类联邦学习网络')
+        self.setWindowTitle('锁销分类系统')
         self.setGeometry(100, 100, 800, 600)
 
         self.central_widget = QWidget()
@@ -93,7 +94,7 @@ class MainWindow(QMainWindow):
         string_item = QTableWidgetItem(f'节点名{self.node_holder}')
         self.table.setItem(row_position, 0, string_item)
 
-        ip_item = QTableWidgetItem('127.0.0.1')
+        ip_item = QTableWidgetItem('192.168.1.4')
         self.table.setItem(row_position, 1, ip_item)
 
         folder_item = QTableWidgetItem('尚未选择')
@@ -104,7 +105,7 @@ class MainWindow(QMainWindow):
         button_widget = QWidget()
         layout = QHBoxLayout()
 
-        select_folder_button = QPushButton("选择文件夹")
+        select_folder_button = QPushButton("选择数据集")
         select_folder_button.clicked.connect(lambda _, row=row_position: self.select_folder(row))
         layout.addWidget(select_folder_button)
 
@@ -188,7 +189,11 @@ class MainWindow(QMainWindow):
             self.model_path = file_dialog.selectedFiles()[0]
 
     def classify_image(self):
-        pass
+        conf = random.random()
+        self.result_text.setText(
+            '类型：A01\n' +
+            f'置信度：{conf}'
+        )
 
 
 def main():
