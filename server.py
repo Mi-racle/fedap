@@ -2,16 +2,14 @@ import argparse
 import multiprocessing
 import os
 from logging import INFO
-from pathlib import Path
 
 import torch
 import flwr as fl
 from datasets import disable_progress_bar
 from flwr.common import log
-from flwr.server.strategy import FedProx
 from flwr_datasets import FederatedDataset
 
-from client import fit_config, weighted_average, get_evaluate_fn, get_client_fn
+from clients.client import fit_config, weighted_average, get_evaluate_fn, get_client_fn
 
 from partitioner import DirichletPartitioner, LabelPartitioner
 from strategy import FedAP, FedAcc, MyFedAvg, MyFedProx
