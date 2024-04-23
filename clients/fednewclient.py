@@ -48,6 +48,22 @@ class FedNewClient(fl.client.NumPyClient):
     def fit(self, parameters, config):
         self.cluster_models = set_params(self.model, parameters, self.cid)
 
+        # cifar batch 64
+        valloader = DataLoader(self.valset, batch_size=64, drop_last=True)
+
+        distribution = self.evaluate_distribution(valloader)
+
+        trainloader = DataLoader(self.trainset, batch_size=config['batch'], shuffle=True, drop_last=True)
+
+        # Return local model and statistics
+        return self.get_parameters({}), len(trainloader.dataset), {'distribution': distribution}
+
+    def evaluate(self, parameters, config):
+        self.cluster_models = set_params(self.model, parameters, self.cid)
+
+        if self.cid == 0:
+            torch.save(self.model.state_dict(), 'best.pt')
+
         # Read from config
         batch, epochs, patience, server_round = \
             config['batch_size'], config['epochs'], config['patience'], config['server_round']
@@ -60,20 +76,7 @@ class FedNewClient(fl.client.NumPyClient):
         # Train
         self.train(trainloader, optimizer, epochs=epochs, patience=patience, device=self.device)
 
-        # cifar batch 64
-        valloader = DataLoader(self.valset, batch_size=64, drop_last=True)
         loss, accuracy = self.test(valloader, device=self.device)
-
-        # Return local model and statistics
-        return self.get_parameters({}), len(trainloader.dataset), {'loss': float(loss), 'accuracy': float(accuracy)}
-        # central
-        # return self.get_parameters({}), len(trainloader.dataset), {'loss': float(loss), 'accuracy': float(accuracy), 'confusion_matrix': cm}
-
-    def evaluate(self, parameters, config):
-        self.cluster_models = set_params(self.model, parameters, self.cid)
-
-        if self.cid == 0:
-            torch.save(self.model.state_dict(), 'best.pt')
 
         # cifar batch 64
         valloader = DataLoader(self.valset, batch_size=64, drop_last=True)
