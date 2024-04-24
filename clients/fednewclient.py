@@ -46,6 +46,9 @@ class FedNewClient(fl.client.NumPyClient):
         return [val.cpu().numpy() for name, val in self.model.state_dict().items() if 'bn' not in name]
 
     def fit(self, parameters, config):
+        """
+        config == fit_config() + proximal_mu
+        """
         self.cluster_models = set_params(self.model, parameters, self.cid)
 
         # cifar batch 64
@@ -65,8 +68,8 @@ class FedNewClient(fl.client.NumPyClient):
             torch.save(self.model.state_dict(), 'best.pt')
 
         # Read from config
-        batch, epochs, patience, server_round = \
-            config['batch_size'], config['epochs'], config['patience'], config['server_round']
+        batch, epochs, patience, server_round, proximal_mu = \
+            config['batch_size'], config['epochs'], config['patience'], config['server_round'], config['proximal_mu']
 
         # Construct dataloader
         trainloader = DataLoader(self.trainset, batch_size=batch, shuffle=True, drop_last=True)
