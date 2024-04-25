@@ -3,15 +3,14 @@ from logging import WARNING
 from typing import Optional, Callable, Dict, Tuple, List, Union
 
 import numpy as np
-from flwr.common import NDArrays, Scalar, Parameters, MetricsAggregationFn, log, FitRes, parameters_to_ndarrays, \
-    ndarrays_to_parameters, EvaluateRes, FitIns
-from flwr.server import ClientManager
+from flwr.common import NDArrays, Scalar, Parameters, MetricsAggregationFn, FitRes, parameters_to_ndarrays, \
+    ndarrays_to_parameters, log, EvaluateRes
 from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import FedAvg
 from flwr.server.strategy.aggregate import weighted_loss_avg
 
 
-class FedNew(FedAvg):
+class FedAcc(FedAvg):
 
     def __init__(
             self,
@@ -33,9 +32,8 @@ class FedNew(FedAvg):
             initial_parameters: Optional[Parameters] = None,
             fit_metrics_aggregation_fn: Optional[MetricsAggregationFn] = None,
             evaluate_metrics_aggregation_fn: Optional[MetricsAggregationFn] = None,
-            proximal_mu: float,
     ) -> None:
-        super(FedNew, self).__init__(
+        super(FedAcc, self).__init__(
             fraction_fit=fraction_fit,
             fraction_evaluate=fraction_evaluate,
             min_fit_clients=min_fit_clients,
@@ -47,33 +45,8 @@ class FedNew(FedAvg):
             accept_failures=accept_failures,
             initial_parameters=initial_parameters,
             fit_metrics_aggregation_fn=fit_metrics_aggregation_fn,
-            evaluate_metrics_aggregation_fn=evaluate_metrics_aggregation_fn
+            evaluate_metrics_aggregation_fn=evaluate_metrics_aggregation_fn,
         )
-        self.proximal_mu = proximal_mu
-
-    def configure_fit(
-            self, server_round: int, parameters: Parameters, client_manager: ClientManager
-    ) -> List[Tuple[ClientProxy, FitIns]]:
-        """Configure the next round of training.
-
-        Sends the proximal factor mu to the clients
-        """
-        # Get the standard client/config pairs from the FedAvg super-class
-        client_config_pairs = super().configure_fit(
-            server_round, parameters, client_manager
-        )
-
-        # Return client/config pairs with the proximal factor mu added
-        return [
-            (
-                client,
-                FitIns(
-                    fit_ins.parameters,
-                    {**fit_ins.config, 'proximal_mu': self.proximal_mu},
-                ),
-            )
-            for client, fit_ins in client_config_pairs
-        ]
 
     def aggregate_fit(
             self,
@@ -89,7 +62,7 @@ class FedNew(FedAvg):
             return None, {}
 
         weights_results = [
-            (parameters_to_ndarrays(fit_res.parameters), fit_res.metrics['distribution'])
+            (parameters_to_ndarrays(fit_res.parameters), fit_res.metrics['accuracy'])
             for _, fit_res in results
         ]
         aggregated_ndarrays = self._aggregate(weights_results)
@@ -103,31 +76,6 @@ class FedNew(FedAvg):
             metrics_aggregated = self.fit_metrics_aggregation_fn(fit_metrics)
         elif server_round == 1:  # Only log this warning once
             log(WARNING, "No fit_metrics_aggregation_fn provided")
-
-        # centralized
-        # fit_metrics = [(res.num_examples, res.metrics) for _, res in results]
-        # loss_aggregated = weighted_loss_avg(
-        #     [
-        #         (num_examples, metrics['loss'])
-        #         for num_examples, metrics in fit_metrics
-        #     ]
-        # )
-        # accuracy_aggregated = weighted_loss_avg(
-        #     [
-        #         (num_examples, metrics['accuracy'])
-        #         for num_examples, metrics in fit_metrics
-        #     ]
-        # )
-        # confusion_matrix = [[0 for __ in range(53)] for _ in range(53)]
-        # for _, metrics in fit_metrics:
-        #     confusion_matrix += metrics['confusion_matrix']
-        # confusion_matrix = np.array(confusion_matrix)
-        #
-        # with open(f'runs/loss_central.txt', 'a+') as fout:
-        #     fout.write(str(loss_aggregated) + '\n')
-        # with open(f'runs/accuracy_central.txt', 'a+') as fout:
-        #     fout.write(str(accuracy_aggregated) + '\n')
-        # np.savetxt(f'runs/confusion_matrix_central.csv', confusion_matrix, delimiter=',')
 
         return parameters_aggregated, metrics_aggregated
 
@@ -155,7 +103,7 @@ class FedNew(FedAvg):
         for _, evaluate_res in results:
             confusion_matrix += evaluate_res.metrics['confusion_matrix']
         confusion_matrix = np.array(confusion_matrix)
-        np.savetxt(f'runs/confusion_matrix_avg.csv', confusion_matrix, delimiter=',')
+        np.savetxt(f'runs/confusion_matrix_acc.csv', confusion_matrix, delimiter=',')
 
         # Aggregate custom metrics if aggregation fn was provided
         metrics_aggregated = {}
@@ -165,9 +113,9 @@ class FedNew(FedAvg):
         elif server_round == 1:  # Only log this warning once
             log(WARNING, "No evaluate_metrics_aggregation_fn provided")
 
-        with open(f'runs/loss_fedavg.txt', 'a+') as fout:
+        with open(f'runs/loss_fedacc.txt', 'a+') as fout:
             fout.write(str(loss_aggregated) + '\n')
-        with open(f'runs/accuracy_fedavg.txt', 'a+') as fout:
+        with open(f'runs/accuracy_fedacc.txt', 'a+') as fout:
             fout.write(str(metrics_aggregated['accuracy']) + '\n')
 
         return loss_aggregated, metrics_aggregated
@@ -175,17 +123,21 @@ class FedNew(FedAvg):
     def _aggregate(self, results: List[Tuple[NDArrays, int]]) -> NDArrays:
         """Compute weighted average."""
         # Calculate the total number of examples used during training
-        num_examples_total = sum(num_examples for (_, num_examples) in results)
+        # num_examples_total = sum(num_examples for (_, num_examples) in results)
+        accuracy_total = sum(accuracy for (_, accuracy) in results)
 
         # Create a list of weights, each multiplied by the related number of examples
         # list[list[ndarray]] / [num_clients][num_layers][...]
+        # weighted_weights = [
+        #     [layer * num_examples for layer in weights] for weights, num_examples in results
+        # ]
         weighted_weights = [
-            [layer * num_examples for layer in weights] for weights, num_examples in results
+            [layer * accuracy for layer in weights] for weights, accuracy in results
         ]
 
         # Compute average weights of each layer
         weights_prime: NDArrays = [
-            reduce(np.add, layer_updates) / num_examples_total
+            reduce(np.add, layer_updates) / accuracy_total
             for layer_updates in zip(*weighted_weights)
         ]
 

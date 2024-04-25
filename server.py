@@ -9,10 +9,13 @@ from datasets import disable_progress_bar
 from flwr.common import log
 from flwr_datasets import FederatedDataset
 
-from clients.client import fit_config, weighted_average, get_evaluate_fn, get_client_fn
+from clients.fedclient import fit_config, weighted_average, get_evaluate_fn, get_client_fn
 
 from partitioner import DirichletPartitioner, LabelPartitioner
-from strategy import FedAP, FedAcc, MyFedAvg, MyFedProx
+from strategies.myfedprox import MyFedProx
+from strategies.myfedavg import MyFedAvg
+from strategies.fedacc import FedAcc
+from strategies.fedap import FedAP
 from utils import increment_path
 
 

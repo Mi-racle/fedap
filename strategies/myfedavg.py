@@ -3,15 +3,14 @@ from logging import WARNING
 from typing import Optional, Callable, Dict, Tuple, List, Union
 
 import numpy as np
-from flwr.common import NDArrays, Scalar, Parameters, MetricsAggregationFn, log, FitRes, parameters_to_ndarrays, \
-    ndarrays_to_parameters, EvaluateRes, FitIns
-from flwr.server import ClientManager
+from flwr.common import NDArrays, Scalar, Parameters, MetricsAggregationFn, FitRes, parameters_to_ndarrays, \
+    ndarrays_to_parameters, log, EvaluateRes
 from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import FedAvg
 from flwr.server.strategy.aggregate import weighted_loss_avg
 
 
-class FedNew(FedAvg):
+class MyFedAvg(FedAvg):
 
     def __init__(
             self,
@@ -33,9 +32,8 @@ class FedNew(FedAvg):
             initial_parameters: Optional[Parameters] = None,
             fit_metrics_aggregation_fn: Optional[MetricsAggregationFn] = None,
             evaluate_metrics_aggregation_fn: Optional[MetricsAggregationFn] = None,
-            proximal_mu: float,
     ) -> None:
-        super(FedNew, self).__init__(
+        super(MyFedAvg, self).__init__(
             fraction_fit=fraction_fit,
             fraction_evaluate=fraction_evaluate,
             min_fit_clients=min_fit_clients,
@@ -47,33 +45,8 @@ class FedNew(FedAvg):
             accept_failures=accept_failures,
             initial_parameters=initial_parameters,
             fit_metrics_aggregation_fn=fit_metrics_aggregation_fn,
-            evaluate_metrics_aggregation_fn=evaluate_metrics_aggregation_fn
+            evaluate_metrics_aggregation_fn=evaluate_metrics_aggregation_fn,
         )
-        self.proximal_mu = proximal_mu
-
-    def configure_fit(
-            self, server_round: int, parameters: Parameters, client_manager: ClientManager
-    ) -> List[Tuple[ClientProxy, FitIns]]:
-        """Configure the next round of training.
-
-        Sends the proximal factor mu to the clients
-        """
-        # Get the standard client/config pairs from the FedAvg super-class
-        client_config_pairs = super().configure_fit(
-            server_round, parameters, client_manager
-        )
-
-        # Return client/config pairs with the proximal factor mu added
-        return [
-            (
-                client,
-                FitIns(
-                    fit_ins.parameters,
-                    {**fit_ins.config, 'proximal_mu': self.proximal_mu},
-                ),
-            )
-            for client, fit_ins in client_config_pairs
-        ]
 
     def aggregate_fit(
             self,
@@ -89,7 +62,7 @@ class FedNew(FedAvg):
             return None, {}
 
         weights_results = [
-            (parameters_to_ndarrays(fit_res.parameters), fit_res.metrics['distribution'])
+            (parameters_to_ndarrays(fit_res.parameters), fit_res.metrics['accuracy'])
             for _, fit_res in results
         ]
         aggregated_ndarrays = self._aggregate(weights_results)
