@@ -3,12 +3,16 @@ import sys
 import threading
 import time
 
+import flwr as fl
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QTableWidget, QPushButton, QWidget, \
     QTableWidgetItem, QFileDialog, QHBoxLayout, QTabWidget, QGridLayout, QLabel, QTextEdit, QFrame
+from datasets import load_dataset, load_from_disk
 
+from clients.fedclient import FedClient
 from testui import Ale
+from utils import apply_transforms
 
 
 class MainWindow(QMainWindow):
@@ -94,7 +98,8 @@ class MainWindow(QMainWindow):
         string_item = QTableWidgetItem(f'节点名{self.node_holder}')
         self.table.setItem(row_position, 0, string_item)
 
-        ip_item = QTableWidgetItem('192.168.1.4')
+        # ip_item = QTableWidgetItem('192.168.1.4')
+        ip_item = QTableWidgetItem('localhost:8080')
         self.table.setItem(row_position, 1, ip_item)
 
         folder_item = QTableWidgetItem('尚未选择')
@@ -144,6 +149,20 @@ class MainWindow(QMainWindow):
 
     def federate_button(self, row, button):
         if button.text() == "加入联邦":
+            data_path = self.table.item(row, 2).text()
+            trainset = load_from_disk(f'{data_path}/train')
+            validset = load_from_disk(f'{data_path}/valid')
+            trainset = trainset.with_transform(apply_transforms)
+            validset = validset.with_transform(apply_transforms)
+
+            thread = threading.Thread(
+                target=fl.client.start_numpy_client(
+                    server_address="localhost:8080",
+                    client=FedClient(trainset, validset, int(row))
+                )
+            )
+            thread.start()
+
             status_item = QTableWidgetItem('训练中')
             status_item.setForeground(Qt.GlobalColor.green)
             self.table.setItem(row, 4, status_item)

@@ -43,7 +43,7 @@ def main():
 
     # Download MNIST dataset and partition it
     mnist_fds = FederatedDataset(
-        dataset=f'./{dataset}',
+        dataset=f'{dataset}',
         partitioners={
             'train':
                 num_clients if partitioner == 'iid' else (

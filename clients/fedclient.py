@@ -96,14 +96,18 @@ def get_client_fn(dataset: FederatedDataset):
         client_dataset_splits = client_dataset.train_test_split(test_size=0.2)
 
         trainset = client_dataset_splits['train']
-        valset = client_dataset_splits['test']
+        validset = client_dataset_splits['test']
+
+        # Dataset generator
+        # trainset.save_to_disk(f'D:/xxs-signs/fedap/datasets/{int(cid)}/train')
+        # validset.save_to_disk(f'D:/xxs-signs/fedap/datasets/{int(cid)}/valid')
 
         # Now we apply the transform to each batch.
         trainset = trainset.with_transform(apply_transforms)
-        valset = valset.with_transform(apply_transforms)
+        validset = validset.with_transform(apply_transforms)
 
         # Create and return client
-        return FedClient(trainset, valset, int(cid)).to_client()
+        return FedClient(trainset, validset, int(cid)).to_client()
 
     return client_fn
 
