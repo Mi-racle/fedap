@@ -1,17 +1,18 @@
+import multiprocessing
 import random
 import sys
 import threading
-import time
+from pathlib import Path
+from typing import List
 
 import flwr as fl
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QTableWidget, QPushButton, QWidget, \
-    QTableWidgetItem, QFileDialog, QHBoxLayout, QTabWidget, QGridLayout, QLabel, QTextEdit, QFrame
-from datasets import load_dataset, load_from_disk
+    QTableWidgetItem, QFileDialog, QHBoxLayout, QTabWidget, QGridLayout, QLabel, QTextEdit, QMessageBox
+from datasets import load_from_disk
 
 from clients.fedclient import FedClient
-from testui import Ale
 from utils import apply_transforms
 
 
@@ -91,6 +92,8 @@ class MainWindow(QMainWindow):
 
         self.central_widget.setLayout(self.layout)
 
+        self.threads = []
+
     def add_row(self):
         row_position = self.table.rowCount()
         self.table.insertRow(row_position)
@@ -137,6 +140,7 @@ class MainWindow(QMainWindow):
 
         self.table.setRowHeight(row_position, 60)
 
+        self.threads.append(None)
         self.node_holder += 1
 
     def select_folder(self, row):
@@ -148,18 +152,25 @@ class MainWindow(QMainWindow):
             self.table.setItem(row, 2, folder_item)
 
     def federate_button(self, row, button):
+
         if button.text() == "加入联邦":
             data_path = self.table.item(row, 2).text()
+
+            if not Path(data_path).exists():
+                QMessageBox.warning(self, '警告', f'数据集路径\'{data_path}\'不存在！')
+                return
+
             trainset = load_from_disk(f'{data_path}/train')
             validset = load_from_disk(f'{data_path}/valid')
             trainset = trainset.with_transform(apply_transforms)
             validset = validset.with_transform(apply_transforms)
 
             thread = threading.Thread(
-                target=fl.client.start_numpy_client(
-                    server_address="localhost:8080",
-                    client=FedClient(trainset, validset, int(row))
-                )
+                target=fl.client.start_client,
+                kwargs={
+                    'server_address': 'localhost:8080',
+                    'client': FedClient(trainset, validset, int(row)).to_client()
+                }
             )
             thread.start()
 
@@ -167,12 +178,30 @@ class MainWindow(QMainWindow):
             status_item.setForeground(Qt.GlobalColor.green)
             self.table.setItem(row, 4, status_item)
             button.setText("退出联邦")
+
         else:
+            response = QMessageBox.question(
+                self,
+                '确认',
+                '确认退出联邦？',
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No
+            )
+
+            if response == QMessageBox.StandardButton.No:
+                return
+
+            thread = self.threads[row]
+            if thread is None:
+                raise 'Thread is None'
+            self.threads.remove(thread)
+
             status_item = QTableWidgetItem('闲置')
             self.table.setItem(row, 4, status_item)
             button.setText("加入联邦")
 
     def delete_button(self, row):
+
         self.table.removeRow(row)
 
         for row in range(self.table.rowCount()):
