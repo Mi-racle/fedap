@@ -1,18 +1,22 @@
 import multiprocessing
 import random
 import sys
-import threading
+import time
 from pathlib import Path
-from typing import List
 
 import flwr as fl
+import torch
+from PIL import Image
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QTableWidget, QPushButton, QWidget, \
     QTableWidgetItem, QFileDialog, QHBoxLayout, QTabWidget, QGridLayout, QLabel, QTextEdit, QMessageBox
 from datasets import load_from_disk
+from torchvision import transforms
+from torchvision.io import read_image
 
 from clients.fedclient import FedClient
+from net import resnet18
 from utils import apply_transforms
 
 
@@ -84,7 +88,6 @@ class MainWindow(QMainWindow):
         classify_button = QPushButton('开始分类')
         classify_button.clicked.connect(self.classify_image)
         self.right_widget.layout.addWidget(classify_button)
-        self.model_path = ''
         self.right_widget.setLayout(self.right_widget.layout)
         self.tab2.layout.addWidget(self.right_widget, 1, 1)
 
@@ -93,6 +96,10 @@ class MainWindow(QMainWindow):
         self.central_widget.setLayout(self.layout)
 
         self.threads = []
+        self.clients = []
+
+        self.image = None
+        self.model = None
 
     def add_row(self):
         row_position = self.table.rowCount()
@@ -141,9 +148,16 @@ class MainWindow(QMainWindow):
         self.table.setRowHeight(row_position, 60)
 
         self.threads.append(None)
+        self.clients.append(None)
         self.node_holder += 1
 
     def select_folder(self, row):
+        thread = self.threads[row]
+
+        if thread is not None:
+            QMessageBox.warning(self, '警告', '联邦学习过程中无法选择数据集！')
+            return
+
         folder_dialog = QFileDialog()
         folder_dialog.setFileMode(QFileDialog.FileMode.Directory)
         if folder_dialog.exec():
@@ -152,7 +166,6 @@ class MainWindow(QMainWindow):
             self.table.setItem(row, 2, folder_item)
 
     def federate_button(self, row, button):
-
         if button.text() == "加入联邦":
             data_path = self.table.item(row, 2).text()
 
@@ -165,14 +178,17 @@ class MainWindow(QMainWindow):
             trainset = trainset.with_transform(apply_transforms)
             validset = validset.with_transform(apply_transforms)
 
-            thread = threading.Thread(
+            client = FedClient(trainset, validset, int(row))
+            self.clients[row] = client
+            thread = multiprocessing.Process(
                 target=fl.client.start_client,
                 kwargs={
                     'server_address': 'localhost:8080',
-                    'client': FedClient(trainset, validset, int(row)).to_client()
+                    'client': client.to_client()
                 }
             )
-            thread.start()
+            # thread.start()
+            self.threads[row] = thread
 
             status_item = QTableWidgetItem('训练中')
             status_item.setForeground(Qt.GlobalColor.green)
@@ -194,36 +210,65 @@ class MainWindow(QMainWindow):
             thread = self.threads[row]
             if thread is None:
                 raise 'Thread is None'
-            self.threads.remove(thread)
+            self.threads[row] = None
 
             status_item = QTableWidgetItem('闲置')
             self.table.setItem(row, 4, status_item)
             button.setText("加入联邦")
 
     def delete_button(self, row):
+        thread = self.threads[row]
 
+        if thread is not None:
+            QMessageBox.warning(self, '警告', '删除节点前请先退出联邦！')
+            return
+
+        self.threads.pop(row)
+        self.clients.pop(row)
         self.table.removeRow(row)
 
-        for row in range(self.table.rowCount()):
-            widget = self.table.cellWidget(row, 3)
+        for i in range(self.table.rowCount()):
+            widget = self.table.cellWidget(i, 3)
             buttons = widget.findChildren(QPushButton)
 
             buttons[0].clicked.disconnect()
-            buttons[0].clicked.connect(lambda _, _row=row: self.select_folder(_row))
-
+            buttons[0].clicked.connect(lambda _, _row=i: self.select_folder(_row))
+            buttons[1].clicked.disconnect()
+            buttons[1].clicked.connect(lambda _, _row=i, btn=buttons[1]: self.federate_button(_row, btn))
             buttons[2].clicked.disconnect()
-            buttons[2].clicked.connect(lambda _, _row=row: self.delete_button(_row))
+            buttons[2].clicked.connect(lambda _, _row=i: self.delete_button(_row))
+            buttons[3].clicked.disconnect()
+            buttons[3].clicked.connect(lambda _, _row=i: self.export_button(_row))
 
     def export_button(self, row):
-        pass
+        client = self.clients[row]
+        if client is None:
+            QMessageBox.information(self, '提示', '该节点尚未进行训练，无可导出模型。')
+            return
+
+        folder_dialog = QFileDialog()
+        folder_dialog.setFileMode(QFileDialog.FileMode.Directory)
+        if folder_dialog.exec():
+            folder_path = folder_dialog.selectedFiles()[0]
+            torch.save(client.get_model().state_dict(), f'{folder_path}/model.pt')
 
     def select_image(self):
         file_dialog = QFileDialog(self)
         file_dialog.setWindowTitle('选择图片')
         file_dialog.setFileMode(QFileDialog.FileMode.ExistingFile)
         file_dialog.setNameFilter('Images (*.png *.jpg *.jpeg *.bmp)')
+
         if file_dialog.exec():
+
             file_path = file_dialog.selectedFiles()[0]
+            transform = transforms.Compose([
+                transforms.Resize(256),
+                transforms.ToTensor(),
+            ])
+            image = Image.open(file_path)
+            self.image = transform(image)
+            self.image = self.image.unsqueeze(0)
+
             pixmap = QPixmap(file_path)
             self.image_label.setPixmap(pixmap.scaled(300, 300, aspectRatioMode=Qt.AspectRatioMode.IgnoreAspectRatio))
             # self.image_label.setPixmap(pixmap.scaled(300, 300, aspectRatioMode=Qt.AspectRatioMode.KeepAspectRatio))
@@ -233,14 +278,32 @@ class MainWindow(QMainWindow):
         file_dialog.setWindowTitle('选择模型')
         file_dialog.setFileMode(QFileDialog.FileMode.ExistingFile)
         file_dialog.setNameFilter('(*.pt)')
+
         if file_dialog.exec():
-            self.model_path = file_dialog.selectedFiles()[0]
+            model_path = file_dialog.selectedFiles()[0]
+            self.model = resnet18(pretrained=False, in_channels=3, num_classes=53)
+            self.model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
 
     def classify_image(self):
-        conf = random.random()
+        if self.image is None:
+            QMessageBox.warning(self, '警告', '尚未选择图片！')
+            return
+        elif self.model is None:
+            QMessageBox.warning(self, '警告', '尚未选择模型！')
+            return
+
+        start_time = time.time()
+        res = self.model(self.image)
+        end_time = time.time()
+
+        cls = torch.argmax(res).item()
+        conf = torch.max(res).item()
+        cost = end_time - start_time
+
         self.result_text.setText(
-            '类型：A01\n' +
-            f'置信度：{conf}'
+            f'类型：{cls}\n' +
+            f'置信度：{conf}\n' +
+            f'耗时：{cost}秒'
         )
 
 

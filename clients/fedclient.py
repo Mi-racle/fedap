@@ -79,6 +79,9 @@ class FedClient(fl.client.NumPyClient):
         # Return statistics
         return float(loss), len(valloader.dataset), {'loss': float(loss), 'accuracy': float(accuracy), 'confusion_matrix': cm}
 
+    def get_model(self):
+        return self.model
+
 
 def get_client_fn(dataset: FederatedDataset):
     """Return a function to construct a client.
