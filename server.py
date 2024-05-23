@@ -12,7 +12,7 @@ from flwr_datasets import FederatedDataset
 from clients.fedclient import fit_config, weighted_average, get_evaluate_fn, get_client_fn
 
 from partitioner import DirichletPartitioner, LabelPartitioner, MixPartitioner
-from strategies.myfedavgm import MyFedAdam, MyFedAvgM
+from strategies.myfedavgm import MyFedAvgM
 from strategies.myfedprox import MyFedProx
 from strategies.myfedavg import MyFedAvg
 from strategies.fedacc import FedAcc
