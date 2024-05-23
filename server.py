@@ -114,8 +114,8 @@ def main():
             on_fit_config_fn=fit_config,
             evaluate_metrics_aggregation_fn=weighted_average,  # Aggregate federated metrics
             evaluate_fn=get_evaluate_fn(centralized_testset),  # Global evaluation function
-            server_learning_rate=0.01,
-            server_momentum=0.9
+            # server_learning_rate=0.01,
+            # server_momentum=0.9
         )
         log(INFO, 'FedAdam')
     else:
