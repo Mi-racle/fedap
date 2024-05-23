@@ -226,9 +226,9 @@ class MixPartitioner(Partitioner):
         labels = np.array(self.dataset['label'])
         num_classes = len(Counter(labels))
         total_samples = self.dataset.num_rows
-        idx_clients: List[List] = []
+        non_idx_clients: List[List] = []
         while min_samples < min_required_samples_per_client:
-            idx_clients = [[] for _ in range(self.num_clients)]
+            non_idx_clients = [[] for _ in range(self.num_clients)]
             for k in range(num_classes):
                 idx_k = np.where(labels == k)[0]
                 prng.shuffle(idx_k)
@@ -236,20 +236,30 @@ class MixPartitioner(Partitioner):
                 proportions = np.array(
                     [
                         p * (len(idx_j) < total_samples / 2 / self.num_clients)
-                        for p, idx_j in zip(proportions, idx_clients)
+                        for p, idx_j in zip(proportions, non_idx_clients)
                     ]
                 )
                 proportions = proportions / proportions.sum()
                 proportions = (np.cumsum(proportions) * len(idx_k)).astype(int)[:-1]
                 idx_k_split = np.split(idx_k, proportions)
-                idx_clients = [
-                    idx_j + idx.tolist() for idx_j, idx in zip(idx_clients, idx_k_split)
+                non_idx_clients = [
+                    idx_j + idx.tolist() for idx_j, idx in zip(non_idx_clients, idx_k_split)
                 ]
-                min_samples = min([len(idx_j) for idx_j in idx_clients])
+                min_samples = min([len(idx_j) for idx_j in non_idx_clients])
 
+        iid_idx_clients: List[List] = [[] for _ in range(self.num_clients)]
+        for i in range(num_classes):
+            idx_k = np.where(labels == i)[0]
+            idx_k = idx_k[len(idx_k) // 2:]
+            prng.shuffle(idx_k)
+            idx_k_split = np.array_split(idx_k, self.num_clients)
+            for j in range(self.num_clients):
+                iid_idx_clients[j] += idx_k_split[j].tolist()
 
+        idx_clients: List[List] = []
+        for non_idxs, iid_idxs in zip(non_idx_clients, iid_idx_clients):
+            idx_clients.append(non_idxs + iid_idxs)
 
-        # trainsets_per_client = [Subset(self.dataset, idxs) for idxs in idx_clients]
         trainsets_per_client = [self.dataset.select(idxs) for idxs in idx_clients]
 
         output_details(trainsets_per_client, num_classes, 'mix')
