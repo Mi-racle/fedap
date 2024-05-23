@@ -60,6 +60,7 @@ def main():
     # Configure the strategy
 
     if affinity == 'avg' or affinity == 'fedavg':
+        affinity = 'fedavg'
         strategy = MyFedAvg(
             # fraction_fit=0.1,  # Sample 10% of available clients for training
             # fraction_evaluate=0.05,  # Sample 5% of available clients for evaluation
@@ -74,6 +75,7 @@ def main():
         )
         log(INFO, 'FedAvg')
     elif affinity == 'prox' or affinity == 'fedprox':
+        affinity = 'fedprox'
         strategy = MyFedProx(
             # fraction_fit=0.1,  # Sample 10% of available clients for training
             # fraction_evaluate=0.05,  # Sample 5% of available clients for evaluation
@@ -89,6 +91,7 @@ def main():
         )
         log(INFO, 'FedProx')
     elif affinity == 'acc' or affinity == 'fedacc':
+        affinity = 'fedacc'
         strategy = FedAcc(
             # fraction_fit=0.1,  # Sample 10% of available clients for training
             # fraction_evaluate=0.05,  # Sample 5% of available clients for evaluation
@@ -103,6 +106,7 @@ def main():
         )
         log(INFO, 'FedAcc')
     elif affinity == 'avgm' or affinity == 'fedavgm':
+        affinity = 'fedavgm'
         strategy = MyFedAvgM(
             # fraction_fit=0.1,  # Sample 10% of available clients for training
             # fraction_evaluate=0.05,  # Sample 5% of available clients for evaluation
@@ -117,7 +121,7 @@ def main():
             # server_learning_rate=0.01,
             # server_momentum=0.9
         )
-        log(INFO, 'FedAdam')
+        log(INFO, 'FedAvgM')
     else:
         strategy = FedAP(
             # fraction_fit=0.1,  # Sample 10% of available clients for training
