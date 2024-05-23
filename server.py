@@ -12,7 +12,7 @@ from flwr_datasets import FederatedDataset
 from clients.fedclient import fit_config, weighted_average, get_evaluate_fn, get_client_fn
 
 from partitioner import DirichletPartitioner, LabelPartitioner, MixPartitioner
-from strategies.myfedadam import MyFedAdam
+from strategies.myfedavgm import MyFedAdam, MyFedAvgM
 from strategies.myfedprox import MyFedProx
 from strategies.myfedavg import MyFedAvg
 from strategies.fedacc import FedAcc
@@ -102,8 +102,8 @@ def main():
             evaluate_fn=get_evaluate_fn(centralized_testset),  # Global evaluation function
         )
         log(INFO, 'FedAcc')
-    elif affinity == 'adam' or affinity == 'fedadam':
-        strategy = MyFedAdam(
+    elif affinity == 'avgm' or affinity == 'fedavgm':
+        strategy = MyFedAvgM(
             # fraction_fit=0.1,  # Sample 10% of available clients for training
             # fraction_evaluate=0.05,  # Sample 5% of available clients for evaluation
             min_fit_clients=num_clients,  # Never sample less than min_fit_clients clients for training
@@ -114,6 +114,8 @@ def main():
             on_fit_config_fn=fit_config,
             evaluate_metrics_aggregation_fn=weighted_average,  # Aggregate federated metrics
             evaluate_fn=get_evaluate_fn(centralized_testset),  # Global evaluation function
+            server_learning_rate=0.01,
+            server_momentum=0.9
         )
         log(INFO, 'FedAdam')
     else:
