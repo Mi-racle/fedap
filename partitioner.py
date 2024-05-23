@@ -226,16 +226,18 @@ class MixPartitioner(Partitioner):
         labels = np.array(self.dataset['label'])
         num_classes = len(Counter(labels))
         total_samples = self.dataset.num_rows
+
+        non_labels = labels[:len(labels) // 2]
         non_idx_clients: List[List] = []
         while min_samples < min_required_samples_per_client:
             non_idx_clients = [[] for _ in range(self.num_clients)]
             for k in range(num_classes):
-                idx_k = np.where(labels == k)[0]
+                idx_k = np.where(non_labels == k)[0]
                 prng.shuffle(idx_k)
                 proportions = prng.dirichlet(np.repeat(self.alpha, self.num_clients))
                 proportions = np.array(
                     [
-                        p * (len(idx_j) < total_samples / 2 / self.num_clients)
+                        p * (len(idx_j) < total_samples / self.num_clients)
                         for p, idx_j in zip(proportions, non_idx_clients)
                     ]
                 )
@@ -247,10 +249,10 @@ class MixPartitioner(Partitioner):
                 ]
                 min_samples = min([len(idx_j) for idx_j in non_idx_clients])
 
+        iid_labels = labels[len(labels) // 2:]
         iid_idx_clients: List[List] = [[] for _ in range(self.num_clients)]
         for i in range(num_classes):
-            idx_k = np.where(labels == i)[0]
-            idx_k = idx_k[len(idx_k) // 2:]
+            idx_k = np.where(iid_labels == i)[0] + len(labels) // 2
             prng.shuffle(idx_k)
             idx_k_split = np.array_split(idx_k, self.num_clients)
             for j in range(self.num_clients):
