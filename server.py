@@ -11,7 +11,7 @@ from flwr_datasets import FederatedDataset
 
 from clients.fedclient import fit_config, weighted_average, get_evaluate_fn, get_client_fn
 
-from partitioner import DirichletPartitioner, LabelPartitioner
+from partitioner import DirichletPartitioner, LabelPartitioner, MixPartitioner
 from strategies.myfedprox import MyFedProx
 from strategies.myfedavg import MyFedAvg
 from strategies.fedacc import FedAcc
@@ -47,8 +47,10 @@ def main():
         partitioners={
             'train':
                 num_clients if partitioner == 'iid' else (
-                    DirichletPartitioner(num_clients, alpha=0.1) if partitioner == 'dirichlet' else
-                    LabelPartitioner(num_clients, labels_per_client=10)
+                    DirichletPartitioner(num_clients, alpha=0.1) if partitioner == 'dirichlet' else (
+                        LabelPartitioner(num_clients, labels_per_client=10) if partitioner == 'label' else
+                        MixPartitioner(num_clients, alpha=0.1)
+                    )
                 )
         },
     )
