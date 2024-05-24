@@ -15,25 +15,43 @@ SETTINGS = {
     'dirichlet': {
         'accuracy': [
             ('results/dirichlet-fedavg/accuracy_fedavg.txt', 'FedAvg', '^'),
-            ('results/dirichlet-fedprox/accuracy_fedprox.txt', 'FedAcc', 'o'),
+            ('results/dirichlet-fedavgm/accuracy_fedavgm.txt', 'FedAvgM', '+'),
+            ('results/dirichlet-fedprox/accuracy_fedprox.txt', 'FedProx', 'o'),
             ('results/dirichlet-fedap/accuracy_cosine.txt', 'FedCAP', 'x'),
         ],
         'loss': [
             ('results/dirichlet-fedavg/loss_fedavg.txt', 'FedAvg', '^'),
-            ('results/dirichlet-fedprox/loss_fedprox.txt', 'FedAcc', 'o'),
+            ('results/dirichlet-fedavgm/loss_fedavgm.txt', 'FedAvgM', '+'),
+            ('results/dirichlet-fedprox/loss_fedprox.txt', 'FedProx', 'o'),
             ('results/dirichlet-fedap/loss_cosine.txt', 'FedCAP', 'x'),
         ],
     },
     'label': {
         'accuracy': [
             ('results/label-fedavg/accuracy_fedavg.txt', 'FedAvg', '^'),
-            ('results/label-fedprox/accuracy_fedprox.txt', 'FedAcc', 'o'),
+            ('results/label-fedavgm/accuracy_fedavgm.txt', 'FedAvgM', '+'),
+            ('results/label-fedprox/accuracy_fedprox.txt', 'FedProx', 'o'),
             ('results/label-fedap/accuracy_cosine.txt', 'FedCAP', 'x'),
         ],
         'loss': [
             ('results/label-fedavg/loss_fedavg.txt', 'FedAvg', '^'),
-            ('results/label-fedprox/loss_fedprox.txt', 'FedAcc', 'o'),
+            ('results/label-fedavgm/loss_fedavgm.txt', 'FedAvgM', '+'),
+            ('results/label-fedprox/loss_fedprox.txt', 'FedProx', 'o'),
             ('results/label-fedap/loss_cosine.txt', 'FedCAP', 'x'),
+        ]
+    },
+    'mix': {
+        'accuracy': [
+            ('results/mix-fedavg/accuracy_fedavg.txt', 'FedAvg', '^'),
+            ('results/mix-fedavgm/accuracy_fedavgm.txt', 'FedAvgM', '+'),
+            ('results/mix-fedprox/accuracy_fedprox.txt', 'FedProx', 'o'),
+            ('results/mix-fedap/accuracy_cosine.txt', 'FedCAP', 'x'),
+        ],
+        'loss': [
+            ('results/mix-fedavg/loss_fedavg.txt', 'FedAvg', '^'),
+            ('results/mix-fedavgm/loss_fedavgm.txt', 'FedAvgM', '+'),
+            ('results/mix-fedprox/loss_fedprox.txt', 'FedProx', 'o'),
+            ('results/mix-fedap/loss_cosine.txt', 'FedCAP', 'x'),
         ]
     }
 }
@@ -48,6 +66,10 @@ YLIMS = {
         'loss': [0, 1],
     },
     'label': {
+        'accuracy': [.6, .8],
+        'loss': [0, 2]
+    },
+    'mix': {
         'accuracy': [.6, .8],
         'loss': [0, 2]
     }

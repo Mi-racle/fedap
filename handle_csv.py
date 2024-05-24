@@ -7,24 +7,36 @@ CSV_PATHS = [
     'results/central/confusion_maxtrix_central.csv',
     'results/dirichlet-fedap/confusion_matrix_cosine.csv',
     'results/dirichlet-fedavg/confusion_matrix_avg.csv',
+    'results/dirichlet-fedavgm/confusion_matrix_avgm.csv',
     'results/dirichlet-fedprox/confusion_matrix_prox.csv',
     'results/iid-fedacc/confusion_matrix_acc.csv',
     'results/iid-fedavg/confusion_matrix_avg.csv',
     'results/label-fedap/confusion_matrix_cosine.csv',
     'results/label-fedavg/confusion_matrix_avg.csv',
+    'results/label-fedavgm/confusion_matrix_avgm.csv',
     'results/label-fedprox/confusion_matrix_prox.csv',
+    'results/mix-fedap/confusion_matrix_cosine.csv',
+    'results/mix-fedavg/confusion_matrix_avg.csv',
+    'results/mix-fedavgm/confusion_matrix_avgm.csv',
+    'results/mix-fedprox/confusion_matrix_prox.csv',
 ]
 
 OUTPUT_DIRS = [
     'results/central/',
     'results/dirichlet-fedap/',
     'results/dirichlet-fedavg/',
+    'results/dirichlet-fedavgm/',
     'results/dirichlet-fedprox/',
     'results/iid-fedacc/',
     'results/iid-fedavg/',
     'results/label-fedap/',
     'results/label-fedavg/',
+    'results/label-fedavgm/',
     'results/label-fedprox/',
+    'results/mix-fedap/',
+    'results/mix-fedavg/',
+    'results/mix-fedavgm/',
+    'results/mix-fedprox/',
 ]
 
 P_R_F1_NAME = 'p_r_f1.csv'
