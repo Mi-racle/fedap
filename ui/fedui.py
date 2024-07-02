@@ -181,19 +181,34 @@ class MainWindow(QMainWindow):
             client = FedClient(trainset, validset, int(row))
             self.clients[row] = client
             thread = multiprocessing.Process(
-                target=fl.client.start_client,
+                target=fl.client.start_numpy_client,
                 kwargs={
                     'server_address': 'localhost:8080',
-                    'client': client.to_client()
+                    'client': client,
                 }
             )
-            # thread.start()
+            thread.start()
             self.threads[row] = thread
 
-            status_item = QTableWidgetItem('训练中')
-            status_item.setForeground(Qt.GlobalColor.green)
+            status_item = QTableWidgetItem('等待中')
+            status_item.setForeground(Qt.GlobalColor.yellow)
+
             self.table.setItem(row, 4, status_item)
             button.setText("退出联邦")
+
+            if row == 3:
+                training_item = QTableWidgetItem('训练中')
+                training_item.setForeground(Qt.GlobalColor.green)
+                self.table.setItem(row - 3, 4, training_item)
+                training_item2 = QTableWidgetItem('训练中')
+                training_item2.setForeground(Qt.GlobalColor.green)
+                self.table.setItem(row - 2, 4, training_item2)
+                training_item3 = QTableWidgetItem('训练中')
+                training_item3.setForeground(Qt.GlobalColor.green)
+                self.table.setItem(row - 1, 4, training_item3)
+                training_item4 = QTableWidgetItem('训练中')
+                training_item4.setForeground(Qt.GlobalColor.green)
+                self.table.setItem(row, 4, training_item4)
 
         else:
             response = QMessageBox.question(
